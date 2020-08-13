@@ -3,31 +3,12 @@
 #include "stdafx.h"
 #include "framework.h"
 #include "A_Star_Algorithm.h"
+#include "A_Star.h"
 
 #define MAX_LOADSTRING 100
 
-#define MAX_HEIGHT 32
-#define MAX_WIDTH 55
+using namespace A_Star;
 
-enum class BLOCK_COLOR
-{
-    BASIC,
-    GREEN,
-    GRAY,
-    RED
-};
-
-struct NODE 
-{
-    DWORD mX;
-    DWORD mY;
-
-    NODE* prev;
-
-    float G;
-    float H;
-    float F;
-};
 
 
 // 전역 변수:
@@ -37,9 +18,7 @@ WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클�
 HWND                hWnd;
 HDC                 hdc;
 
-NODE nodeBlock[MAX_WIDTH][MAX_HEIGHT];
 
-BYTE blockList[MAX_WIDTH][MAX_HEIGHT] = { (BYTE)BLOCK_COLOR::BASIC, };
 
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
@@ -212,12 +191,28 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     static HBRUSH oldBrush;
+
+    // 출발지 체크 브러쉬
     static HBRUSH greenBrush;
+    
+    // 목적지 체크 브러쉬
     static HBRUSH redBrush;
+
+    // 장애물 체크 브러쉬
     static HBRUSH grayBrush;
+
+    // 오픈 리스트 체크 브러쉬
+    static HBRUSH blueBrush;
+
 
     static DWORD mouseX;
     static DWORD mouseY;
+
+    static DWORD redX;
+    static DWORD redY;
+
+    static DWORD greenX;
+    static DWORD greenY;
 
     static bool wallFlag = false;
     static bool wallClearFlag = false;
@@ -230,6 +225,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         greenBrush = CreateSolidBrush(RGB(0, 255, 0));
 
         redBrush = CreateSolidBrush(RGB(255, 0, 0));
+
+        blueBrush = CreateSolidBrush(RGB(0, 0, 255));
 
         grayBrush = CreateSolidBrush(RGB(105, 105, 105));
 
@@ -259,14 +256,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             mouseY = HIWORD(lParam);
             mouseX = LOWORD(lParam);
 
-            blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::GRAY;           
+            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::BASIC)
+            {
+                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::GRAY;
+            }
         }
         else if (wallClearFlag == true)
         {
             mouseY = HIWORD(lParam);
             mouseX = LOWORD(lParam);
-
-            blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::BASIC;
+            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::GRAY)
+            {
+                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::BASIC;
+            }
         }
 
         InvalidateRect(hWnd, nullptr, false);
@@ -277,79 +279,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         mouseY = HIWORD(lParam);
         mouseX = LOWORD(lParam);
 
+        
         if (MK_CONTROL & wParam)
         {
-
-            for (int iCnt1 = 0; iCnt1 < MAX_WIDTH; iCnt1++)
+            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::GRAY)
             {
-                for (int iCnt2 = 0; iCnt2 < MAX_HEIGHT; iCnt2++)
-                {
-                    if (blockList[iCnt1][iCnt2] == (BYTE)BLOCK_COLOR::RED)
-                    {
-                        blockList[iCnt1][iCnt2] = (BYTE)BLOCK_COLOR::BASIC;
-
-                        loopFlag = true;
-
-                        break;
-                    }
-                }
-
-                if (loopFlag == true)
-                {
-                    loopFlag = false;
-
-                    break;
-                }
+                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::BASIC;
             }
 
-            blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::RED;
-            
+            wallClearFlag = true;
         }
         else if (MK_SHIFT & wParam)
         {
 
-            if (blockList[mouseX / 25][mouseY / 25] == (BYTE)BLOCK_COLOR::BASIC)
+            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::BASIC)
             {
-                blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::GRAY;
+                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::GRAY;
             }
 
 
             wallFlag = true;
-        }
-        else if (GetAsyncKeyState(VK_SPACE))
-        {
-            if (blockList[mouseX / 25][mouseY / 25] == (BYTE)BLOCK_COLOR::GRAY)
-            {
-                blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::BASIC;
-            }
-
-
-            wallClearFlag = true;
-        }
+        } 
         else
         {
-            for (int iCnt1 = 0; iCnt1 < MAX_WIDTH; iCnt1++)
-            {
-                for (int iCnt2 = 0; iCnt2 < MAX_HEIGHT; iCnt2++)
-                {
-                    if (blockList[iCnt1][iCnt2] == (BYTE)BLOCK_COLOR::GREEN)
-                    {
-                        blockList[iCnt1][iCnt2] = (BYTE)BLOCK_COLOR::BASIC;
+            blockList[greenX][greenY] = (BYTE)BLOCK_COLOR::BASIC;
 
-                        loopFlag = true;
+            greenX = mouseX / PERMETER_OF_SQUARE;
+            greenY = mouseY / PERMETER_OF_SQUARE;
 
-                        break;
-                    }
-                }
-                if (loopFlag == true)
-                {
-                    loopFlag = false;
-
-                    break;
-                }
-            }
-
-            blockList[mouseX / 25][mouseY / 25] = (BYTE)BLOCK_COLOR::GREEN;
+            blockList[greenX][greenY] = (BYTE)BLOCK_COLOR::GREEN;
         }
 
 
@@ -357,6 +315,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         
         break;
 
+    case WM_RBUTTONDOWN:
+ 
+        mouseY = HIWORD(lParam);
+        mouseX = LOWORD(lParam);
+
+        blockList[redX][redY] = (BYTE)BLOCK_COLOR::BASIC;
+
+        redX = mouseX / PERMETER_OF_SQUARE;
+        redY = mouseY / PERMETER_OF_SQUARE;
+
+        blockList[redX][redY] = (BYTE)BLOCK_COLOR::RED;
+
+        InvalidateRect(hWnd, nullptr, false);
+
+        
+        break;
     case WM_LBUTTONUP:
 
         wallFlag = false;
@@ -385,7 +359,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         oldBrush = (HBRUSH)SelectObject(hdc, grayBrush);
                     }
                  
-                        Rectangle(hdc, 25 * iCnt2, 25 * iCnt1, 25 * (iCnt2 + 1), 25 * (iCnt1 + 1));
+                        Rectangle(hdc, PERMETER_OF_SQUARE* iCnt2, PERMETER_OF_SQUARE* iCnt1, PERMETER_OF_SQUARE* (iCnt2 + 1), PERMETER_OF_SQUARE* (iCnt1 + 1));
 
                         SelectObject(hdc, oldBrush);
                 }
