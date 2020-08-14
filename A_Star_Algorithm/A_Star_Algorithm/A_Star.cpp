@@ -95,9 +95,11 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 	}
 	else
 	{
+		// openList F값 정렬
+		openListBubbleSort();
+
 		// F값이 가장 작은 노드를 선택한다.
 		curNode = SelectOpenListNode();
-
 	}
 
 
@@ -305,8 +307,6 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 	areaFlag = false;
 }
 
-	// openList F값 정렬
-	openListBubbleSort();
 	
 	return nullptr;
 }
