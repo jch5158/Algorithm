@@ -2,6 +2,7 @@
 //
 #include "stdafx.h"
 #include "framework.h"
+#include "CList.h"
 #include "A_Star_Algorithm.h"
 #include "A_Star.h"
 
@@ -15,17 +16,27 @@ using namespace A_Star;
 HINSTANCE           hInst;                                // 현재 인스턴스입니다.
 WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-HWND                hWnd;
 HDC                 hdc;
+HWND                hWnd;
+
+// red 색상이 칠해진 타일
+int                redX;
+int                redY;
+
+// green 색상이 칠해진 타일
+int                greenX;
+int                greenY;
 
 
-
+A_Star::NODE*      retNode;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+void CALLBACK       TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime);
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -190,11 +201,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static HANDLE hTimer;
+
     static HBRUSH oldBrush;
 
     // 출발지 체크 브러쉬
     static HBRUSH greenBrush;
-    
+
     // 목적지 체크 브러쉬
     static HBRUSH redBrush;
 
@@ -204,15 +217,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     // 오픈 리스트 체크 브러쉬
     static HBRUSH blueBrush;
 
+    static HBRUSH yellowBrush;
 
+    static HPEN oldPen;
+    static HPEN redPen;
+
+
+    // 마우스 좌표
     static DWORD mouseX;
     static DWORD mouseY;
 
-    static DWORD redX;
-    static DWORD redY;
-
-    static DWORD greenX;
-    static DWORD greenY;
 
     static bool wallFlag = false;
     static bool wallClearFlag = false;
@@ -228,7 +242,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         blueBrush = CreateSolidBrush(RGB(0, 0, 255));
 
+        yellowBrush = CreateSolidBrush(RGB(255, 255, 0));
+
         grayBrush = CreateSolidBrush(RGB(105, 105, 105));
+
+        redPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+
+        hTimer = (HANDLE)SetTimer(hWnd, 1, 50, (TIMERPROC)TimerProc);
 
         break;
     case WM_COMMAND:
@@ -248,7 +268,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+    case WM_KEYDOWN:
 
+        if (wParam == VK_RETURN)
+        {
+            functionFlag = true;
+        }
+
+        break;
     case WM_MOUSEMOVE:
 
         if (wallFlag == true)
@@ -259,6 +286,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::BASIC)
             {
                 blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::GRAY;
+
+                InvalidateRect(hWnd, nullptr, false);
             }
         }
         else if (wallClearFlag == true)
@@ -268,10 +297,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::GRAY)
             {
                 blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::BASIC;
+
+                InvalidateRect(hWnd, nullptr, false);
             }
         }
 
-        InvalidateRect(hWnd, nullptr, false);
 
         break;
     case WM_LBUTTONDOWN:
@@ -346,29 +376,75 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
                 {                  
-                    if (blockList[iCnt2][iCnt1] == (BYTE)BLOCK_COLOR::GREEN)
+                    
+                    switch (blockList[iCnt2][iCnt1])
                     {
+                    case (BYTE)BLOCK_COLOR::GREEN:
+
                         oldBrush = (HBRUSH)SelectObject(hdc, greenBrush);
-                    }
-                    else if(blockList[iCnt2][iCnt1] == (BYTE)BLOCK_COLOR::RED)
-                    {
+
+                        break;
+                    case (BYTE)BLOCK_COLOR::RED:
+                    
                         oldBrush = (HBRUSH)SelectObject(hdc, redBrush);
-                    }
-                    else if (blockList[iCnt2][iCnt1] == (BYTE)BLOCK_COLOR::GRAY)
-                    {
+                    
+                        break;
+                    case (BYTE)BLOCK_COLOR::GRAY:
+
                         oldBrush = (HBRUSH)SelectObject(hdc, grayBrush);
+
+                        break;
+                    case (BYTE)BLOCK_COLOR::BLUE:
+
+                        oldBrush = (HBRUSH)SelectObject(hdc, blueBrush);
+
+                        break;
+                    case (BYTE)BLOCK_COLOR::YELLOW:
+                    
+                        oldBrush = (HBRUSH)SelectObject(hdc, yellowBrush);
+
+                        break;
+
                     }
                  
-                        Rectangle(hdc, PERMETER_OF_SQUARE* iCnt2, PERMETER_OF_SQUARE* iCnt1, PERMETER_OF_SQUARE* (iCnt2 + 1), PERMETER_OF_SQUARE* (iCnt1 + 1));
+                    Rectangle(hdc, PERMETER_OF_SQUARE* iCnt2, PERMETER_OF_SQUARE* iCnt1, PERMETER_OF_SQUARE* (iCnt2 + 1), PERMETER_OF_SQUARE* (iCnt1 + 1));
 
-                        SelectObject(hdc, oldBrush);
+                    SelectObject(hdc, oldBrush);
                 }
             }            
+
+
+            
+            A_Star::NODE* paintNode = retNode;
+
+            oldPen = (HPEN)SelectObject(hdc, redPen);
+
+            while (1)
+            {
+                if (paintNode == nullptr)
+                {
+                    break;
+                }
+                
+                
+                MoveToEx(hdc, 10 + (paintNode->mX * PERMETER_OF_SQUARE), 10 + (paintNode->mY * PERMETER_OF_SQUARE), nullptr);
+
+                paintNode = paintNode->prev;
+
+                if (paintNode != nullptr)
+                {
+                    LineTo(hdc, 10 + (paintNode->mX * PERMETER_OF_SQUARE), 10 + (paintNode->mY * PERMETER_OF_SQUARE));
+                }
+            }
+
 
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
+
+        KillTimer(hWnd, 1);
+
 
         // PostQuitMessage 함수를 호출하여 WM_QUIT 메시지를 보낸다. WM_QUIT 메시지가 입력되면 
         // 메시지 루프의 GetMessage 함수 리턴값이 False가 되어 프로그램이 종료된다.
@@ -376,11 +452,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     default:
 
+
         // 윈도우의 이동이나 크기변경 따위의 처리는 직접 해 줄 필요없이 DefWindowProc으로 넘겨주기만 하면 된다.
         // 또한 DefWindowProc 함수가 메시지를 처리했을 경우 이 함수가 리턴한 값을 WndProc 함수가 다시 리턴해 주어야 한다.
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
+}
+
+void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
+{
+    static bool returnFlag = true;
+
+    if (returnFlag == true)
+    {
+        retNode = PathFind(greenX, greenY, redX, redY);
+        InvalidateRect(hWnd, nullptr, false);
+        if (retNode != nullptr)
+        {
+            returnFlag = false;
+        }
+    }
+   
 }
 
 // 정보 대화 상자의 메시지 처리기입니다.

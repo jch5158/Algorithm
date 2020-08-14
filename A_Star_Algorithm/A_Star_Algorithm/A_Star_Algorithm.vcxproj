@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="A_Star.h" />
     <ClInclude Include="A_Star_Algorithm.h" />
+    <ClInclude Include="CList.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -155,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="A_Star.cpp" />
     <ClCompile Include="A_Star_Algorithm.cpp" />
+    <ClCompile Include="CList.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
