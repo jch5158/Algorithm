@@ -9,13 +9,7 @@ CList<A_Star::NODE*> A_Star::openList;
 
 CList<A_Star::NODE*> A_Star::closeList;
 
-
 bool A_Star::functionFlag = false;
-
-
-
-bool A_Star::selectOpenNodeFlag = false;
-
 
 A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int destinationY)
 {
@@ -159,161 +153,162 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 
 	bool areaFlag = false;
 
-	for(int iCnt = 0; iCnt < 8; iCnt++)
+	for (int iCnt = 0; iCnt < 8; iCnt++)
 	{
-	if (iCnt == 0)
-	{
-		if (posX + 1 < MAX_WIDTH)
+		if (iCnt == 0)
 		{
-			newNodePosX = posX + 1;
-			newNodePosY = posY;
-			areaFlag = true;
-		}
-		diagonal = false;
-	}
-	else if (iCnt == 1)
-	{
-		if (posX + 1 < MAX_WIDTH && posY + 1 < MAX_HEIGHT)
-		{
-			newNodePosX = posX + 1;
-			newNodePosY = posY + 1;
-			areaFlag = true;
-
-		}
-		diagonal = true;
-	}
-	else if (iCnt == 2)
-	{
-		if (posY + 1 < MAX_HEIGHT)
-		{
-			newNodePosX = posX;
-			newNodePosY = posY + 1;
-			areaFlag = true;
-
-		}
-
-		diagonal = false;
-	}
-	else if (iCnt == 3)
-	{
-		if (posX - 1 > 0 && posY + 1 < MAX_HEIGHT)
-		{
-			newNodePosX = posX - 1;
-			newNodePosY = posY + 1;
-			areaFlag = true;
-
-		}
-
-		diagonal = true;
-	}
-	else if (iCnt == 4)
-	{
-		if (posX - 1 > 0)
-		{
-			newNodePosX = posX - 1;
-			newNodePosY = posY;
-			areaFlag = true;
-
-		}
-
-		diagonal = false;
-	}
-	else if (iCnt == 5)
-	{
-		if (posX - 1 > 0 && posY - 1 > 0)
-		{
-			newNodePosX = posX - 1;
-			newNodePosY = posY - 1;
-			areaFlag = true;
-
-		}
-
-		diagonal = true;
-	}
-	else if (iCnt == 6)
-	{
-		if (posY - 1 > 0)
-		{
-			newNodePosX = posX;
-			newNodePosY = posY - 1;
-			areaFlag = true;
-		}
-
-		diagonal = false;
-	}
-	else if (iCnt == 7)
-	{
-		if (posX + 1 < MAX_WIDTH && posY - 1 > 0)
-		{
-			newNodePosX = posX + 1;
-			newNodePosY = posY - 1;
-			areaFlag = true;
-		}
-		diagonal = true;
-
-		//selectOpenNodeFlag = true;
-	}
-
-
-
-	// 해당 좌표가 closeList에 없으면은 오픈 리스트에 추가한다.
-	if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY && areaFlag != false)
-	{
-		//오픈리스트에 이미 있는 노드가 아닐 만들어서 추가한다.
-		retOpenNode = FindOpenList(newNodePosX, newNodePosY);
-		if (retOpenNode == nullptr)
-		{
-			openNode = (NODE*)malloc(sizeof(NODE));
-
-			openNode->prev = node;
-
-			openNode->mX = newNodePosX;
-			openNode->mY = newNodePosY;
-
-			if (diagonal == true)
+			if (posX + 1 < MAX_WIDTH)
 			{
-				openNode->G = node->G + 1.5;
+				newNodePosX = posX + 1;
+				newNodePosY = posY;
+				areaFlag = true;
 			}
-			else
+			diagonal = false;
+		}
+		else if (iCnt == 1)
+		{
+			if (posX + 1 < MAX_WIDTH && posY + 1 < MAX_HEIGHT)
 			{
-				openNode->G = node->G + 1;
+				newNodePosX = posX + 1;
+				newNodePosY = posY + 1;
+				areaFlag = true;
+
+			}
+			diagonal = true;
+		}
+		else if (iCnt == 2)
+		{
+			if (posY + 1 < MAX_HEIGHT)
+			{
+				newNodePosX = posX;
+				newNodePosY = posY + 1;
+				areaFlag = true;
+
 			}
 
-
-			int bufferX = abs(destinationNode->mX - newNodePosX);
-			int bufferY = abs(destinationNode->mY - newNodePosY);
-
-
-			openNode->H = (float)(bufferX + bufferY);
-
-
-			openNode->F = openNode->G + openNode->H;
-
-			if (blockList[newNodePosX][newNodePosY] == (BYTE)BLOCK_COLOR::RED)
-			{
-				//closeList.PushBack(openNode);
-				return openNode;
-			}
-			else
-			{
-				openList.PushBack(openNode);
-			}
-
-			blockList[newNodePosX][newNodePosY] = (BYTE)BLOCK_COLOR::BLUE;
+			diagonal = false;
 		}
+		else if (iCnt == 3)
+		{
+			if (posX - 1 > 0 && posY + 1 < MAX_HEIGHT)
+			{
+				newNodePosX = posX - 1;
+				newNodePosY = posY + 1;
+				areaFlag = true;
+			}
+			diagonal = true;
+		}
+		else if (iCnt == 4)
+		{
+			if (posX - 1 > 0)
+			{
+				newNodePosX = posX - 1;
+				newNodePosY = posY;
+				areaFlag = true;
+			}
+			diagonal = false;
+		}
+		else if (iCnt == 5)
+		{
+			if (posX - 1 > 0 && posY - 1 > 0)
+			{
+				newNodePosX = posX - 1;
+				newNodePosY = posY - 1;
+				areaFlag = true;
+			}
+			diagonal = true;
+		}
+		else if (iCnt == 6)
+		{
+			if (posY - 1 > 0)
+			{
+				newNodePosX = posX;
+				newNodePosY = posY - 1;
+				areaFlag = true;
+			}
+
+			diagonal = false;
+		}
+		else if (iCnt == 7)
+		{
+			if (posX + 1 < MAX_WIDTH && posY - 1 > 0)
+			{
+				newNodePosX = posX + 1;
+				newNodePosY = posY - 1;
+				areaFlag = true;
+			}
+			diagonal = true;
+		}
+
+
+
+		// 해당 좌표가 closeList에 없으면은 오픈 리스트에 추가한다.
+		if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY && areaFlag != false)
+		{
+			//오픈리스트에 이미 있는 노드가 아닐 만들어서 추가한다.
+			retOpenNode = FindOpenList(newNodePosX, newNodePosY);
+			if (retOpenNode == nullptr)
+			{
+				openNode = (NODE*)malloc(sizeof(NODE));
+
+				// 인자로 들어온 node는 보존해야 한다.
+				NODE* nodeBuffer = node;
+
+				// 대각선이면은 주변 G값들을 한번 확인해줘야 한다.
+				if (diagonal == true)
+				{
+					CList<A_Star::NODE*>::Iterator iterE = openList.end();
+
+					for (CList<A_Star::NODE*>::Iterator iter = openList.begin(); iter != iterE; ++iter)
+					{
+						if (abs(iter->mX - newNodePosX) <= 1 && abs(iter->mY - newNodePosY) <= 1)
+						{
+							if (iter->G < nodeBuffer->G)
+							{
+								nodeBuffer = (*iter)->data;
+							}
+						}
+					}
+				}
+				openNode->prev = nodeBuffer;
+
+				openNode->mX = newNodePosX;
+				openNode->mY = newNodePosY;
+
+
+				if (abs(openNode->mX - nodeBuffer->mX) == 1 && abs(openNode->mY - nodeBuffer->mY) == 1)
+				{
+					openNode->G = nodeBuffer->G + 1.5;
+				}
+				else
+				{
+					openNode->G = nodeBuffer->G + 1;
+				}
+
+
+				openNode->H = (float)(abs(destinationNode->mX - newNodePosX) + abs(destinationNode->mY - newNodePosY));
+
+				openNode->F = openNode->G + openNode->H;
+
+				if (blockList[newNodePosX][newNodePosY] == (BYTE)BLOCK_COLOR::RED)
+				{
+					return openNode;
+				}
+				else
+				{
+					openList.PushBack(openNode);
+				}
+
+				blockList[newNodePosX][newNodePosY] = (BYTE)BLOCK_COLOR::BLUE;
+			}
+		}
+
+		// 범위 밖으로 벗어나는지 확인하는 값
+		areaFlag = false;
 	}
-
-
-	areaFlag = false;
-}
 
 	
 	return nullptr;
-}
-
-bool A_Star::InsertCloseNode(A_Star::NODE* node)
-{
-
 }
 
 

@@ -39,10 +39,7 @@ namespace A_Star
 
     // 타이머를 통해서 함수 로직 실행할지를 설정한다.
     extern bool functionFlag;
-
-    // 주변 오픈리스트를 다 만들었으면은 true로 변환
-    extern bool selectOpenNodeFlag;
-
+ 
 
     NODE* PathFind(int startX, int startY, int destinationX, int destinationY);
 
@@ -51,8 +48,6 @@ namespace A_Star
     bool FindCloseList(int openX, int openY);
 
     NODE* InsertOpenNode(NODE* node, NODE* destinationNode);
-
-    bool InsertCloseNode(NODE* node);
 
     NODE* SelectOpenListNode();
 
