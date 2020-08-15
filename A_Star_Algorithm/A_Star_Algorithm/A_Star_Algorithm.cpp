@@ -275,6 +275,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             functionFlag = true;
         }
 
+        if (wParam == VK_SPACE)
+        {
+            functionFlag = false;
+            retNode = nullptr;
+            ResetAll();
+        }
+
+        InvalidateRect(hWnd, nullptr, false);
+
         break;
     case WM_MOUSEMOVE:
 
@@ -412,8 +421,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     SelectObject(hdc, oldBrush);
                 }
             }            
-
-
             
             A_Star::NODE* paintNode = retNode;
 

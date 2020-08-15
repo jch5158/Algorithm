@@ -51,5 +51,13 @@ namespace A_Star
 
     NODE* SelectOpenListNode();
 
+    void ResetOpenList();
+
+    void ResetCloseList();
+
+    void ResetBlock();
+
+    void ResetAll();
+
     void openListBubbleSort();
 }

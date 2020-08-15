@@ -13,7 +13,6 @@ bool A_Star::functionFlag = false;
 
 A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int destinationY)
 {
-
 	static bool funcSet = true;
 
 	// 현재 노드
@@ -48,22 +47,12 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 
 		startNode->prev = nullptr;
 
-		// 시작노드의 이동거리
+		// 시작노드 G 설정
 		startNode->G = 0;
 
-		// 목적지까지의 절대값
-
-
-		float fStartX = (float)startX;
-		float fStartY = (float)startY;
-
-		float fDestX = (float)destinationX;
-		float fDestY = (float)destinationY;
-
-		startNode->H += fabs(fDestX - fStartX);
-
-		startNode->H += fabs(fDestY - fStartY);
-
+		// 목적지까지의 절대값	
+		startNode->H += (float)(abs(destinationX - startX) + abs(destinationY - startY));
+		
 		startNode->F = startNode->G + startNode->H;
 
 		// 클로즈 리스트에 추가
@@ -78,7 +67,6 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 
 	NODE* retval;
 	
-
 	// 오픈 리스트를 만들기 위해서 현재 노드 위치랑 목적지 위치를 인자로 전달한다.
 	retval = InsertOpenNode(curNode, destinationNode);
 	// false일 경우 목적지까지 노드를 만들었다.
@@ -88,7 +76,7 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 		return retval;
 	}
 	else
-	{
+	{		
 		// openList F값 정렬
 		openListBubbleSort();
 
@@ -150,9 +138,7 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 
 	// 사선
 	bool diagonal = false;
-
-	bool areaFlag = false;
-
+	
 	for (int iCnt = 0; iCnt < 8; iCnt++)
 	{
 		if (iCnt == 0)
@@ -161,95 +147,116 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 			{
 				newNodePosX = posX + 1;
 				newNodePosY = posY;
-				areaFlag = true;
+				diagonal = false;
 			}
-			diagonal = false;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 1)
 		{
 			if (posX + 1 < MAX_WIDTH && posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX + 1;
-				newNodePosY = posY + 1;
-				areaFlag = true;
-
+				newNodePosY = posY + 1;	
+				diagonal = true;
 			}
-			diagonal = true;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 2)
 		{
 			if (posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX;
-				newNodePosY = posY + 1;
-				areaFlag = true;
-
+				newNodePosY = posY + 1;				
+				diagonal = false;
 			}
-
-			diagonal = false;
+			else 
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 3)
 		{
-			if (posX - 1 > 0 && posY + 1 < MAX_HEIGHT)
+			if (posX - 1 >= 0 && posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY + 1;
-				areaFlag = true;
+				diagonal = true;
 			}
-			diagonal = true;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 4)
 		{
-			if (posX - 1 > 0)
+			if (posX - 1 >= 0)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY;
-				areaFlag = true;
+				diagonal = false;
 			}
-			diagonal = false;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 5)
 		{
-			if (posX - 1 > 0 && posY - 1 > 0)
+			if (posX - 1 >= 0 && posY - 1 >= 0)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY - 1;
-				areaFlag = true;
+				diagonal = true;
 			}
-			diagonal = true;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 6)
 		{
-			if (posY - 1 > 0)
+			if (posY - 1 >= 0)
 			{
 				newNodePosX = posX;
 				newNodePosY = posY - 1;
-				areaFlag = true;
+				diagonal = false;
 			}
-
-			diagonal = false;
+			else
+			{
+				continue;
+			}
 		}
 		else if (iCnt == 7)
 		{
-			if (posX + 1 < MAX_WIDTH && posY - 1 > 0)
+			if (posX + 1 < MAX_WIDTH && posY - 1 >= 0)
 			{
 				newNodePosX = posX + 1;
 				newNodePosY = posY - 1;
-				areaFlag = true;
+				diagonal = true;
 			}
-			diagonal = true;
+			else
+			{
+				continue;
+			}
 		}
 
-
-
 		// 해당 좌표가 closeList에 없으면은 오픈 리스트에 추가한다.
-		if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY && areaFlag != false)
+		if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY)
 		{
 			//오픈리스트에 이미 있는 노드가 아닐 만들어서 추가한다.
 			retOpenNode = FindOpenList(newNodePosX, newNodePosY);
 			if (retOpenNode == nullptr)
 			{
 				openNode = (NODE*)malloc(sizeof(NODE));
+
+				openNode->mX = newNodePosX;
+				openNode->mY = newNodePosY;
 
 				// 인자로 들어온 node는 보존해야 한다.
 				NODE* nodeBuffer = node;
@@ -272,19 +279,15 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 				}
 				openNode->prev = nodeBuffer;
 
-				openNode->mX = newNodePosX;
-				openNode->mY = newNodePosY;
-
-
+				
 				if (abs(openNode->mX - nodeBuffer->mX) == 1 && abs(openNode->mY - nodeBuffer->mY) == 1)
 				{
-					openNode->G = nodeBuffer->G + 1.5;
+					openNode->G = nodeBuffer->G + 1.5f;
 				}
 				else
 				{
 					openNode->G = nodeBuffer->G + 1;
 				}
-
 
 				openNode->H = (float)(abs(destinationNode->mX - newNodePosX) + abs(destinationNode->mY - newNodePosY));
 
@@ -296,17 +299,12 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 				}
 				else
 				{
+					blockList[newNodePosX][newNodePosY] = (BYTE)BLOCK_COLOR::BLUE;
 					openList.PushBack(openNode);
 				}
-
-				blockList[newNodePosX][newNodePosY] = (BYTE)BLOCK_COLOR::BLUE;
 			}
 		}
-
-		// 범위 밖으로 벗어나는지 확인하는 값
-		areaFlag = false;
 	}
-
 	
 	return nullptr;
 }
@@ -332,6 +330,47 @@ A_Star::NODE* A_Star::SelectOpenListNode()
 	return node;
 }
 
+
+void A_Star::ResetAll()
+{
+	ResetOpenList();
+
+	ResetCloseList();
+
+	ResetBlock();
+}
+
+void A_Star::ResetOpenList()
+{
+	CList<A_Star::NODE*>::Iterator iterE = openList.end();
+
+	for (CList<A_Star::NODE*>::Iterator iter = openList.begin(); iter != iterE;)
+	{
+		iter = openList.erase(iter);
+	}
+}
+
+void A_Star::ResetCloseList()
+{
+	CList<A_Star::NODE*>::Iterator iterE = closeList.end();
+
+	for (CList<A_Star::NODE*>::Iterator iter = closeList.begin(); iter != iterE;)
+	{
+		iter = closeList.erase(iter);
+	}
+}
+
+void A_Star::ResetBlock()
+{
+
+	for (int iCntY = 0; iCntY < MAX_HEIGHT; iCntY++)
+	{
+		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
+		{
+			blockList[iCntX][iCntY] = (BYTE)BLOCK_COLOR::BASIC;
+		}
+	}
+}
 
 void A_Star::openListBubbleSort(){
 
