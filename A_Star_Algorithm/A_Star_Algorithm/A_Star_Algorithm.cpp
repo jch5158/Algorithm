@@ -28,6 +28,9 @@ int                greenX;
 int                greenY;
 
 
+bool               returnFlag = false;
+
+
 A_Star::NODE*      retNode;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
@@ -272,6 +275,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == VK_RETURN)
         {
+            returnFlag = true;
             functionFlag = true;
         }
 
@@ -469,8 +473,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-    static bool returnFlag = true;
-
+    
     if (returnFlag == true)
     {
         retNode = PathFind(greenX, greenY, redX, redY);

@@ -30,6 +30,18 @@ namespace A_Star
         BLACK
     };
 
+    enum class NODE_DIRECTION
+    {
+        NODE_DIR_RR,
+        NODE_DIR_RD,
+        NODE_DIR_DD,
+        NODE_DIR_LD,
+        NODE_DIR_LL,
+        NODE_DIR_LU,
+        NODE_DIR_UU,
+        NODE_DIR_RU
+    };
+
 
     extern BYTE blockList[MAX_WIDTH][MAX_HEIGHT];
 

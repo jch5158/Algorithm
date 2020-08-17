@@ -25,7 +25,6 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 	// 엔터를 입력하기 전까지 해당 함수를 호출 시 바로 리턴됩니다.
 	if (functionFlag == false)
 	{
-		funcSet = true;
 		return nullptr;
 	}
 
@@ -72,6 +71,7 @@ A_Star::NODE* A_Star::PathFind(int startX, int startY, int destinationX, int des
 	// false일 경우 목적지까지 노드를 만들었다.
 	if (retval != nullptr)
 	{
+		funcSet = true;
 		functionFlag = false;
 		return retval;
 	}
@@ -136,115 +136,118 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 	int newNodePosX = 0;
 	int newNodePosY = 0;
 
-	// 사선
-	bool diagonal = false;
 	
 	for (int iCnt = 0; iCnt < 8; iCnt++)
 	{
-		if (iCnt == 0)
+
+		switch ((NODE_DIRECTION)iCnt)
 		{
+		case NODE_DIRECTION::NODE_DIR_RR:
+			
 			if (posX + 1 < MAX_WIDTH)
 			{
 				newNodePosX = posX + 1;
 				newNodePosY = posY;
-				diagonal = false;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 1)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_RD:
+			
 			if (posX + 1 < MAX_WIDTH && posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX + 1;
-				newNodePosY = posY + 1;	
-				diagonal = true;
+				newNodePosY = posY + 1;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 2)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_DD:
+	
 			if (posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX;
-				newNodePosY = posY + 1;				
-				diagonal = false;
+				newNodePosY = posY + 1;
 			}
-			else 
+			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 3)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_LD:
+			
 			if (posX - 1 >= 0 && posY + 1 < MAX_HEIGHT)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY + 1;
-				diagonal = true;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 4)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_LL:
+			
 			if (posX - 1 >= 0)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY;
-				diagonal = false;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 5)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_LU:
+		
 			if (posX - 1 >= 0 && posY - 1 >= 0)
 			{
 				newNodePosX = posX - 1;
 				newNodePosY = posY - 1;
-				diagonal = true;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 6)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_UU:
+
 			if (posY - 1 >= 0)
 			{
 				newNodePosX = posX;
 				newNodePosY = posY - 1;
-				diagonal = false;
 			}
 			else
 			{
 				continue;
 			}
-		}
-		else if (iCnt == 7)
-		{
+
+			break;
+		case NODE_DIRECTION::NODE_DIR_RU:
+
 			if (posX + 1 < MAX_WIDTH && posY - 1 >= 0)
 			{
 				newNodePosX = posX + 1;
 				newNodePosY = posY - 1;
-				diagonal = true;
 			}
 			else
 			{
 				continue;
 			}
+
+			break;
 		}
+
 
 		// 해당 좌표가 closeList에 없으면은 오픈 리스트에 추가한다.
 		if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY)
@@ -258,35 +261,15 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 				openNode->mX = newNodePosX;
 				openNode->mY = newNodePosY;
 
-				// 인자로 들어온 node는 보존해야 한다.
-				NODE* nodeBuffer = node;
-
-				// 대각선이면은 주변 G값들을 한번 확인해줘야 한다.
-				if (diagonal == true)
-				{
-					CList<A_Star::NODE*>::Iterator iterE = openList.end();
-
-					for (CList<A_Star::NODE*>::Iterator iter = openList.begin(); iter != iterE; ++iter)
-					{
-						if (abs(iter->mX - newNodePosX) <= 1 && abs(iter->mY - newNodePosY) <= 1)
-						{
-							if (iter->G < nodeBuffer->G)
-							{
-								nodeBuffer = (*iter)->data;
-							}
-						}
-					}
-				}
-				openNode->prev = nodeBuffer;
-
+				openNode->prev = node;
 				
-				if (abs(openNode->mX - nodeBuffer->mX) == 1 && abs(openNode->mY - nodeBuffer->mY) == 1)
+				if (abs(openNode->mX - node->mX) == 1 && abs(openNode->mY - node->mY) == 1)
 				{
-					openNode->G = nodeBuffer->G + 1.5f;
+					openNode->G = node->G + 1.5f;
 				}
 				else
 				{
-					openNode->G = nodeBuffer->G + 1;
+					openNode->G = node->G + 1;
 				}
 
 				openNode->H = (float)(abs(destinationNode->mX - newNodePosX) + abs(destinationNode->mY - newNodePosY));
@@ -303,6 +286,28 @@ A_Star::NODE* A_Star::InsertOpenNode(A_Star::NODE* node, A_Star::NODE* destinati
 					openList.PushBack(openNode);
 				}
 			}
+			else
+			{		
+				// node -> openList에서 뽑은 노드
+				// retOpenNode   ->  이미 만들어져있는 노드
+				if (retOpenNode->prev->G > node->G)
+				{   
+					retOpenNode->prev = node;	
+
+					if (abs(retOpenNode->mX - node->mX) == 1 && abs(retOpenNode->mY - node->mY) == 1)
+					{
+						retOpenNode->G = node->G + 1.5f;
+					}
+					else
+					{
+						retOpenNode->G = node->G + 1;
+					}
+					
+					retOpenNode->F = retOpenNode->G + retOpenNode->H;
+				}   
+			}
+
+
 		}
 	}
 	
