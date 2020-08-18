@@ -87,6 +87,17 @@ namespace JumpPointSearch
     NODE* CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y);
 
 
+    // 5방향을 체크한다.
+    NODE* CheckRightUp(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y);
+
+
+
     NODE* CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y);
 
     NODE* CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
@@ -94,8 +105,6 @@ namespace JumpPointSearch
     NODE* CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
 
     NODE* CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
-
-
 
 
     NODE* SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir ,int x, int y);
