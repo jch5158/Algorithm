@@ -7,6 +7,8 @@ namespace JumpPointSearch
         int mX;
         int mY;
 
+        BYTE mNodeDir;
+
         NODE* prev;
 
         // 블럭 이동 횟수
@@ -39,7 +41,8 @@ namespace JumpPointSearch
         NODE_DIR_LL,
         NODE_DIR_LU,
         NODE_DIR_UU,
-        NODE_DIR_RU
+        NODE_DIR_RU,
+        NODE_DIR_ALL
     };
 
 
@@ -48,6 +51,14 @@ namespace JumpPointSearch
     extern CList<NODE*> openList;
 
     extern CList<NODE*> closeList;
+
+
+    // 목적지 노드
+    extern NODE* destinationNode;
+
+    // 시작지 노드
+    extern NODE* startNode;
+
 
     // 타이머를 통해서 함수 로직 실행할지를 설정한다.
     extern bool functionFlag;
@@ -63,6 +74,33 @@ namespace JumpPointSearch
 
     NODE* SelectOpenListNode();
 
+
+    NODE* CheckDirection(NODE* node, int* x, int* y);
+
+
+    NODE* CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y);
+
+    NODE* CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y);
+
+
+    NODE* CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y);
+
+    NODE* CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+
+    NODE* CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+
+    NODE* CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+
+
+
+
+    NODE* SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir ,int x, int y);
+
+
     void ResetOpenList();
 
     void ResetCloseList();
@@ -72,6 +110,5 @@ namespace JumpPointSearch
     void ResetAll();
 
     void openListBubbleSort();
-
 };
 

@@ -12,15 +12,19 @@ CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
 bool JumpPointSearch::functionFlag = false;
 
 
+// 목적지 노드
+JumpPointSearch::NODE* JumpPointSearch::destinationNode = nullptr;
+
+// 시작지 노드
+JumpPointSearch::NODE* JumpPointSearch::startNode = nullptr;
+
+
 JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY)
 {
 	static bool funcSet = true;
 
 	// 현재 노드
 	static JumpPointSearch::NODE* curNode = nullptr;
-
-	// 목적지 노드
-	static NODE* destinationNode = nullptr;
 
 
 	// 엔터를 입력하기 전까지 해당 함수를 호출 시 바로 리턴됩니다.
@@ -39,11 +43,13 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 		destinationNode->mY = destinationY;
 
 		// 시작 노드 설정
-		NODE* startNode = (NODE*)malloc(sizeof(NODE));
+		startNode = (NODE*)malloc(sizeof(NODE));
 
 		// 시작노드 좌표설정
 		startNode->mX = startX;
 		startNode->mY = startY;
+
+		startNode->mNodeDir = (BYTE)NODE_DIRECTION::NODE_DIR_ALL;
 
 		startNode->prev = nullptr;
 
@@ -108,7 +114,9 @@ JumpPointSearch::NODE* JumpPointSearch::FindOpenList(int openX, int openY)
 	return nullptr;
 }
 
+//======================================================
 // 해당 좌표에 closeList가 있다면은 true를 리턴한다.
+//======================================================
 bool JumpPointSearch::FindCloseList(int closeX, int closeY)
 {
 	CList<NODE*>::Iterator iterE = closeList.end();
@@ -138,176 +146,163 @@ JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* no
 	int newNodePosY = 0;
 
 
-	for (int iCnt = 0; iCnt < 8; iCnt++)
+
+
+	
+
+
+
+	
+
+	return nullptr;
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, int* x, int* y)
+{
+	NODE* retNode;
+
+	switch ((NODE_DIRECTION)node->mNodeDir)
 	{
+	case NODE_DIRECTION::NODE_DIR_RR:
 
-		switch ((NODE_DIRECTION)iCnt)
+		retNode = CheckRightHorizontal(node, destinationNode, *x, *y);
+		if (retNode != nullptr)
 		{
-		case NODE_DIRECTION::NODE_DIR_RR:
 
-			if (posX + 1 < MAX_WIDTH)
-			{
-				newNodePosX = posX + 1;
-				newNodePosY = posY;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_RD:
-
-			if (posX + 1 < MAX_WIDTH && posY + 1 < MAX_HEIGHT)
-			{
-				newNodePosX = posX + 1;
-				newNodePosY = posY + 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_DD:
-
-			if (posY + 1 < MAX_HEIGHT)
-			{
-				newNodePosX = posX;
-				newNodePosY = posY + 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_LD:
-
-			if (posX - 1 >= 0 && posY + 1 < MAX_HEIGHT)
-			{
-				newNodePosX = posX - 1;
-				newNodePosY = posY + 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_LL:
-
-			if (posX - 1 >= 0)
-			{
-				newNodePosX = posX - 1;
-				newNodePosY = posY;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_LU:
-
-			if (posX - 1 >= 0 && posY - 1 >= 0)
-			{
-				newNodePosX = posX - 1;
-				newNodePosY = posY - 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_UU:
-
-			if (posY - 1 >= 0)
-			{
-				newNodePosX = posX;
-				newNodePosY = posY - 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
-		case NODE_DIRECTION::NODE_DIR_RU:
-
-			if (posX + 1 < MAX_WIDTH && posY - 1 >= 0)
-			{
-				newNodePosX = posX + 1;
-				newNodePosY = posY - 1;
-			}
-			else
-			{
-				continue;
-			}
-
-			break;
+			return retNode;
 		}
 
+		break;
+	case NODE_DIRECTION::NODE_DIR_RD:
 
-		// 해당 좌표가 closeList에 없으면은 오픈 리스트에 추가한다.
-		if (FindCloseList(newNodePosX, newNodePosY) == false && blockList[newNodePosX][newNodePosY] != (BYTE)BLOCK_COLOR::GRAY)
-		{
-			//오픈리스트에 이미 있는 노드가 아닐 만들어서 추가한다.
-			retOpenNode = FindOpenList(newNodePosX, newNodePosY);
-			if (retOpenNode == nullptr)
+		
+		break;
+	case NODE_DIRECTION::NODE_DIR_DD:
+
+		
+		break;
+	case NODE_DIRECTION::NODE_DIR_LD:
+
+		
+		break;
+	case NODE_DIRECTION::NODE_DIR_LL:
+	
+		
+		break;
+	case NODE_DIRECTION::NODE_DIR_LU:
+
+		
+		break;
+	case NODE_DIRECTION::NODE_DIR_UU:
+		
+
+		break;
+	case NODE_DIRECTION::NODE_DIR_RU:
+
+		break;
+
+	case NODE_DIRECTION::NODE_DIR_ALL:
+
+		break;
+
+	default:
+		return nullptr;
+	}
+
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y)
+{
+	NODE* newNode;
+
+	newNode = (NODE*)malloc(sizeof(NODE));
+
+	newNode->mX = x;
+	newNode->mY = y;
+	blockList[newNode->mX][newNode->mY] = (BYTE)BLOCK_COLOR::BLUE;
+
+	newNode->G = (parentNode->mX - newNode->mX) * +1.5f;
+
+	int subX = abs(parentNode->mX - newNode->mX);
+	int subY = abs(parentNode->mY - newNode->mY);
+
+	if (subX >= 1 && subY >= 1)
+	{
+		newNode->G = ((float)subX) * 1.5f;
+	}
+	else
+	{
+		newNode->G = ((float)subX) * 1.0f;
+	}
+
+	newNode->H = (float)(abs(destNode->mX - newNode->mX) + abs(destNode->mY - newNode->mY));
+
+	newNode->F = newNode->G + newNode->H;
+
+	newNode->mNodeDir = (BYTE)nodeDir;
+
+	newNode->prev = parentNode;
+
+	// 블럭 리스트의 색깔을 바꾼다.
+	blockList[x][y] = (BYTE)BLOCK_COLOR::BLUE;
+
+	return newNode;
+}
+
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y)
+{
+	NODE* newOpenNode;
+
+	NODE* assistNode;
+
+	for (int iCnt = x; iCnt + 1 < MAX_WIDTH; ++iCnt)
+	{
+		if (y > 0 && y + 1 < MAX_HEIGHT)
+		{	
+
+			if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
 			{
-				openNode = (NODE*)malloc(sizeof(NODE));
-
-				openNode->mX = newNodePosX;
-				openNode->mY = newNodePosY;
-
-				openNode->prev = node;
-
-				if (abs(openNode->mX - node->mX) == 1 && abs(openNode->mY - node->mY) == 1)
-				{
-					openNode->G = node->G + 1.5f;
-				}
-				else
-				{
-					openNode->G = node->G + 1;
-				}
-
-				openNode->H = (float)(abs(destinationNode->mX - newNodePosX) + abs(destinationNode->mY - newNodePosY));
-
-				openNode->F = openNode->G + openNode->H;
-
-				if (blockList[newNodePosX][newNodePosY] == (BYTE)BLOCK_COLOR::RED)
-				{
-					return openNode;
-				}
-				else
-				{
-					blockList[newNodePosX][newNodePosY] = (BYTE)BLOCK_COLOR::BLUE;
-					openList.PushBack(openNode);
-				}
+				return nullptr;
 			}
-			else
+
+			if (iCnt == destNode->mX && y == destNode->mY)
 			{
-				// node -> openList에서 뽑은 노드
-				// retOpenNode   ->  이미 만들어져있는 노드
-				if (retOpenNode->prev->G > node->G)
-				{
-					retOpenNode->prev = node;
+				destNode->prev = parentNode;
 
-					if (abs(retOpenNode->mX - node->mX) == 1 && abs(retOpenNode->mY - node->mY) == 1)
-					{
-						retOpenNode->G = node->G + 1.5f;
-					}
-					else
-					{
-						retOpenNode->G = node->G + 1;
-					}
-
-					retOpenNode->F = retOpenNode->G + retOpenNode->H;
-				}
+				return destNode;
 			}
 
+
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
+			    blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				
+				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+
+				openList.PushBack(newOpenNode);
+
+
+				// 코너를 확인하여 수직 방향 탐색을 보낸다.
+				if (blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{	
+					
+					CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + 1, y - 1);
+
+				}
+
+				if (blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+
+					CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + 1, y - 1);
+
+				}
+
+				return newOpenNode;
+			}
 
 		}
 	}
@@ -316,6 +311,294 @@ JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* no
 }
 
 
+
+JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y)
+{
+	NODE* newOpenNode;
+
+	NODE* assistNode;
+
+
+	for (int iCnt = x; iCnt - 1 > 0; --iCnt)
+	{
+		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (iCnt == destNode->mX && y == destNode->mY)
+		{
+			destNode->prev = parentNode;
+
+			return destNode;
+		}
+
+		if (y > 0 && y + 1 < MAX_HEIGHT)
+		{
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC || 
+				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)	
+			{
+
+				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+
+				openList.PushBack(newOpenNode);
+
+
+				// 코너에 오픈 리스트에 넣을 노드를 만든다.
+				if (blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+
+
+				}
+
+				if (blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+			
+				
+				}
+
+
+				return newOpenNode;
+			}
+		
+		}	
+	}
+
+	return nullptr;
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y)
+{
+
+	NODE* newOpenNode;
+
+	NODE* assistNode;
+
+	for (int iCnt = y; iCnt - 1 > 0; iCnt--)
+	{
+
+		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (x == destNode->mX && iCnt == destNode->mY)
+		{
+			destNode->prev = parentNode;
+
+			return destNode;
+		}
+
+
+		if (x > 0 && x + 1 < MAX_WIDTH)
+		{
+			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC || 
+				blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+
+				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, iCnt, y);
+
+				openList.PushBack(newOpenNode);
+
+				// 코너에 오픈 리스트에 넣을 노드를 만든다.
+				if (blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+				}
+
+				if (blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+
+				}
+
+				return newOpenNode;
+			}
+		}	
+	}
+
+	return nullptr;
+}
+
+JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y)
+{
+	NODE* newOpenNode;
+
+	NODE* assistNode;
+
+	for (int iCnt = y; iCnt + 1 < MAX_HEIGHT; iCnt++)
+	{
+
+		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (x == destNode->mX && iCnt == destNode->mY)
+		{
+			destNode->prev = parentNode;
+
+			return destNode;
+		}
+
+
+		if (x > 0 && x + 1 < MAX_WIDTH)
+		{
+			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC ||
+				blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+
+				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, iCnt, y);
+
+				openList.PushBack(newOpenNode);
+
+				// 코너에 오픈 리스트에 넣을 노드를 만든다.
+				if (blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+
+				}
+
+				if (blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+				{
+
+				}
+
+
+				return newOpenNode;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y)
+{
+
+	NODE* newOpenNode;
+
+	for (int iCnt = x; iCnt + 1 < MAX_WIDTH; iCnt++)
+	{
+		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+	
+
+		if (y > 0 && y + 1 < MAX_HEIGHT)
+		{
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
+				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+		}
+	
+	}
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y)
+{
+
+	NODE* newOpenNode;
+
+	for (int iCnt = x; iCnt - 1 > 0; iCnt--)
+	{
+		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (y > 0 && y + 1 < MAX_HEIGHT)
+		{
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
+				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+		}
+
+	}
+
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y)
+{
+
+	NODE* newOpenNode;
+
+	for (int iCnt = y; iCnt - 1 > 0; iCnt--)
+	{
+		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (x > 0 && x + 1 < MAX_WIDTH)
+		{
+
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC ||
+				blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+
+		}
+	}
+
+}
+
+
+JumpPointSearch::NODE* JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y)
+{
+
+	NODE* newOpenNode;
+
+	for (int iCnt = y; iCnt + 1 < MAX_HEIGHT; iCnt++)
+	{
+		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
+		}
+
+		if (x > 0 && x + 1 < MAX_WIDTH)
+		{
+
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC ||
+				blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+
+		}
+	}
+
+}
+
+
+//================================================================
+// 오픈 리스트에서 정렬되어 있던 F값 노드를 뽑는다.
+//================================================================
 JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 {
 	// F값이 작은 순서로 정렬해놨기 때문에 begin값을 뽑으면 첫 노드를 뽑을 수 있다.
@@ -337,8 +620,15 @@ JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 }
 
 
+//=============================================================
+// 모든 리스트와 블럭을 초기화 시킨다.
+//=============================================================
 void JumpPointSearch::ResetAll()
 {
+	free(startNode);
+
+	free(destinationNode);
+
 	ResetOpenList();
 
 	ResetCloseList();
@@ -346,6 +636,11 @@ void JumpPointSearch::ResetAll()
 	ResetBlock();
 }
 
+
+
+//=============================================================
+// 오픈리스트 노드를 리셋한다.
+//=============================================================
 void JumpPointSearch::ResetOpenList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = openList.end();
@@ -356,6 +651,11 @@ void JumpPointSearch::ResetOpenList()
 	}
 }
 
+
+
+//=============================================================
+// 클로즈리스트 노드를 리셋한다.
+//=============================================================
 void JumpPointSearch::ResetCloseList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = closeList.end();
@@ -366,6 +666,9 @@ void JumpPointSearch::ResetCloseList()
 	}
 }
 
+//=============================================================
+// 블럭들을 리셋한다.
+//=============================================================
 void JumpPointSearch::ResetBlock()
 {
 
@@ -378,6 +681,10 @@ void JumpPointSearch::ResetBlock()
 	}
 }
 
+
+//=============================================================
+// F값 작은 순으로 정렬한다.
+//=============================================================
 void JumpPointSearch::openListBubbleSort() {
 
 	CList<JumpPointSearch::NODE*>::Iterator iterE = JumpPointSearch::openList.end();
