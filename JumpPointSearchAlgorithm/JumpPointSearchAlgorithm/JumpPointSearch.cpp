@@ -76,7 +76,7 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 	// 오픈 리스트를 만들기 위해서 현재 노드 위치랑 목적지 위치를 인자로 전달한다.
 	retval = InsertOpenNode(curNode, destinationNode);
 	// false일 경우 목적지까지 노드를 만들었다.
-	if (retval != destinationNode)
+	if (retval == destinationNode)
 	{
 		funcSet = true;
 		functionFlag = false;
@@ -133,7 +133,7 @@ bool JumpPointSearch::FindCloseList(int closeX, int closeY)
 }
 
 
-JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* node, JumpPointSearch::NODE* destinationNode)
+JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* node, JumpPointSearch::NODE* destNode)
 {
 	NODE* retOpenNode;
 
@@ -145,22 +145,21 @@ JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* no
 	int newNodePosX = 0;
 	int newNodePosY = 0;
 
-	node->mNodeDir = (BYTE)NODE_DIRECTION::NODE_DIR_RR;
-    retOpenNode = CheckDirection(node, &posX, &posY);
-	if (retOpenNode != destinationNode)
+	// 테스트용
+	//node->mNodeDir = (BYTE)NODE_DIRECTION::NODE_DIR_RR;
+
+
+    retOpenNode = CheckDirection(node, destNode,posX, posY);
+	if (retOpenNode != destNode)
 	{
 		return nullptr;
-	}
+	}	
 
-
-
-	
-
-	return destinationNode;
+	return destNode;
 }
 
 
-JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, int* x, int* y)
+JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, NODE* destNode,int x, int y)
 {
 	NODE* retNode;
 
@@ -168,49 +167,135 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, int* x, int* 
 	{
 	case NODE_DIRECTION::NODE_DIR_RR:
 
-		retNode = CheckRightHorizontal(node, destinationNode, *x, *y);
-		if (retNode != nullptr)
+		retNode = CheckRightHorizontal(node, destNode, x, y);
+		if (retNode == destNode)
 		{
-
 			return retNode;
 		}
 
 		break;
 	case NODE_DIRECTION::NODE_DIR_RD:
 
-		
+		retNode = CheckRightDown(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
 		break;
 	case NODE_DIRECTION::NODE_DIR_DD:
 
 		
+		retNode = CheckDownVertical(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
 		break;
 	case NODE_DIRECTION::NODE_DIR_LD:
 
+		retNode = CheckLeftDown(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_LL:
 	
+		retNode = CheckLeftHorizontal(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_LU:
 
+		retNode = CheckLeftUp(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_UU:
 		
+		retNode = CheckUpVertical(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
 
 		break;
 	case NODE_DIRECTION::NODE_DIR_RU:
 
+		retNode = CheckRightUp(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
 		break;
 
 	case NODE_DIRECTION::NODE_DIR_ALL:
+
+		retNode = CheckRightUp(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckRightHorizontal(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckRightDown(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckDownVertical(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckLeftDown(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckLeftHorizontal(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckLeftUp(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}
+
+		retNode = CheckUpVertical(node, destNode, x, y);
+		if (retNode == destNode)
+		{
+			return retNode;
+		}	
 
 		break;
 
 	default:
 		return nullptr;
 	}
+
+	return nullptr;
 
 }
 
@@ -258,59 +343,60 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y)
 {
 	NODE* newOpenNode;
+
+	bool returnFlag = false;
 	
 	for (int iCnt = x; iCnt + 1 < MAX_WIDTH; ++iCnt)
 	{
-		if (y > 0 && y + 1 < MAX_HEIGHT)
-		{	
-
-			if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
-			{
-				return nullptr;
-			}
-
-			if (iCnt == destNode->mX && y == destNode->mY)
-			{
-				destNode->prev = parentNode;
-
-				return destNode;
-			}
-
-
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
-			    blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
-			{
-				
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
-
-				openList.PushBack(newOpenNode);
-
-
-				// 코너를 확인하여 수직 방향 탐색을 보낸다.
-				if (blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
-				{	
-					
-					if (destNode == CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, iCnt + 1, y - 1))
-					{
-						return destNode;
-					}
-
-				}
-
-				if (blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
-				{
-
-					if (destNode == CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, iCnt + 1, y + 1))
-					{
-						return destNode;
-					}
-
-				}
-
-				return newOpenNode;
-			}
-
+		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		{
+			return nullptr;
 		}
+
+		if (iCnt == destNode->mX && y == destNode->mY)
+		{
+			destNode->prev = parentNode;
+
+			return destNode;
+		}
+
+		if (y > 0)
+		{
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				// 보조 탐색영역
+				if (destNode == CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, iCnt + 1, y - 1))
+				{
+					return destNode;
+				}
+
+				returnFlag = true;
+			}	
+		}
+
+		if (y + 1 < MAX_WIDTH)
+		{
+			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				if (destNode == CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, iCnt + 1, y + 1))
+				{
+					return destNode;
+				}	
+
+				returnFlag = true;
+			}
+		}
+
+		if (returnFlag)
+		{
+			newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
+		}
+
+
 	}
 
 	return nullptr;
@@ -322,6 +408,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 {
 	NODE* newOpenNode;
 
+	bool returnFlag = false;
 
 	for (int iCnt = x; iCnt - 1 > 0; --iCnt)
 	{
@@ -337,42 +424,46 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 			return destNode;
 		}
 
-		if (y > 0 && y + 1 < MAX_HEIGHT)
+
+		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC || 
-				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)	
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
-
-				openList.PushBack(newOpenNode);
-
-
-				// 코너에 오픈 리스트에 넣을 노드를 만든다.
-				if (blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				if (destNode == CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, iCnt - 1, y - 1))
 				{
-
-					if (destNode == CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, iCnt - 1, y - 1))
-					{
-						return destNode;
-					}
-
+					return destNode;
 				}
+			
+				returnFlag = true;
 
-				if (blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			}
+		}
+
+
+		if (y + 1 < MAX_HEIGHT)
+		{
+			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+
+				if (destNode == CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, iCnt - 1, y + 1))
 				{
+					return destNode;
+				}		
 
-					if (destNode == CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, iCnt - 1, y + 1))
-					{
-						return destNode;
-					}
-				
-				}
-
-
-				return newOpenNode;
+				returnFlag = true;
 			}		
 		}	
+
+		if (returnFlag)
+		{
+			newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
+		}
+
 	}
 
 	return nullptr;
@@ -381,8 +472,9 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y)
 {
-
 	NODE* newOpenNode;
+
+	bool returnFlag = false;
 
 	for (int iCnt = y; iCnt - 1 > 0; iCnt--)
 	{
@@ -399,49 +491,55 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 			return destNode;
 		}
 
-
-		if (x > 0 && x + 1 < MAX_WIDTH)
+		if (x > 0)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC || 
-				blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, iCnt, y);
-
-				openList.PushBack(newOpenNode);
-
-				// 코너에 오픈 리스트에 넣을 노드를 만든다.
-				if (blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+				if (destNode == CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - 1, iCnt - 1))
 				{
+					return destNode;
+				}	
 
-					if (destNode == CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + 1, iCnt - 1))
-					{
-						return destNode;
-					}
+				returnFlag = true;
+			}
+		}
 
+
+		if (x + 1 < MAX_WIDTH)
+		{
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+
+
+				if (destNode == CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + 1, iCnt - 1))
+				{
+					return destNode;
 				}
 
-				if (blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
-				{
-					
-					if (destNode == CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - 1, iCnt - 1))
-					{
-						return destNode;
-					}
-
-				}
-
-				return newOpenNode;
+				returnFlag = true;
 			}
 		}	
-	}
 
+
+		if (returnFlag)
+		{
+			newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, iCnt, y);
+
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
+		}
+
+	}
 	return nullptr;
 }
 
 JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y)
 {
 	NODE* newOpenNode;
+
+	bool returnFlag = false;
 
 	for (int iCnt = y; iCnt + 1 < MAX_HEIGHT; iCnt++)
 	{
@@ -458,42 +556,44 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 			return destNode;
 		}
 
+		if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		{
+
+			if (destNode == CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - 1, iCnt + 1))
+			{
+				return destNode;
+			}
+		
+			
+			returnFlag = true;
+		}
+
 
 		if (x > 0 && x + 1 < MAX_WIDTH)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC ||
-				blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, iCnt, y);
-
-				openList.PushBack(newOpenNode);
-
-				// 코너에 오픈 리스트에 넣을 노드를 만든다.
-				if (blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+				if (destNode == CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + 1, iCnt + 1))
 				{
-					
-					if (destNode == CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + 1, iCnt + 1))
-					{
-						return destNode;
-					}
+					return destNode;
+				}	
 
-				}
-
-				if (blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
-				{
-					
-					if (destNode == CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - 1, iCnt + 1))
-					{
-						return destNode;
-					}
-
-				}
-
-
-				return newOpenNode;
+				returnFlag = true;
 			}
 		}
+
+
+		if (returnFlag)
+		{
+
+			newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, iCnt, y);
+
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
+		}
+
 	}
 
 	return nullptr;
@@ -502,42 +602,237 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 
 // 5방향을 체크한다.
-JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* destNode, int x, int y)
+JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall)
 {
 	
-	if (destNode == CheckUpVertical(parentNode, destNode, x, y))
+	int xPos = x;
+	int yPos = y;
+
+	if (firstCall == true)
 	{
-		return destNode;
+		if (destNode == CheckRightHorizontal(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+
+		if (destNode == CheckUpVertical(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
 	}
 
-	if (destNode == CheckRightHorizontal(parentNode, destNode, x, y))
+	while (1)
 	{
-		return destNode;
+		xPos += 1;
+
+		yPos -= 1;
+
+		if (blockList[xPos - 1][yPos + 1] == (BYTE)BLOCK_COLOR::GRAY || xPos == MAX_WIDTH || yPos + 1 == 0)
+		{
+			return nullptr;
+		}
+
+		//if (yPos - 1 >= 0 && xPos - 1 >= 0)
+		//{
+		//	if (blockList[xPos - 1][yPos] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos - 1][yPos - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckLeftUp(parentNode, destNode, xPos - 1, yPos - 1,false);
+		//	}
+		//}
+		//
+		//if (xPos + 1 < MAX_WIDTH && yPos + 1 < MAX_HEIGHT)
+		//{
+		//	if (blockList[xPos][yPos + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos + 1][yPos + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckRightDown(parentNode, destNode, xPos + 1, yPos + 1, false);
+		//	}
+		//}
+
+
+		CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, xPos, yPos);	
+	
+		CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, xPos, yPos);		
 	}
 
+	return nullptr;
+
 }
 
-JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y)
+JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y,bool firstCall)
+{
+	int xPos = x;
+
+	int yPos = y;
+
+	if (firstCall == true)
+	{
+		if (destNode == CheckRightHorizontal(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+
+		if (destNode == CheckDownVertical(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+	}
+
+	while (1)
+	{
+
+		xPos += 1;
+
+		yPos += 1;
+
+		if (blockList[xPos - 1][yPos - 1] == (BYTE)BLOCK_COLOR::GRAY || xPos == MAX_WIDTH || yPos == MAX_HEIGHT)
+		{
+			return nullptr;
+		}
+
+		//if (xPos - 1 >= 0 && yPos + 1 < MAX_HEIGHT)
+		//{
+		//	if (blockList[xPos - 1][yPos] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos - 1][yPos + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckLeftDown(parentNode, destNode, xPos - 1, yPos + 1, false);
+		//	}
+		//}
+
+		//if (xPos + 1 < MAX_WIDTH && yPos - 1 >= 0)
+		//{
+		//	if (blockList[xPos][yPos + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos + 1][yPos + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckRightUp(parentNode, destNode, xPos + 1, yPos + 1, false);
+		//	}
+		//}
+
+		CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, xPos, yPos);
+
+		CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, xPos, yPos);
+
+	}
+
+
+}
+
+JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y,bool firstCall)
 {
 
+	int xPos = x;
+	int yPos = y;
+
+	if (firstCall == true)
+	{
+		if (destNode == CheckLeftHorizontal(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+
+		if (destNode == CheckUpVertical(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+	}
+
+	while (1)
+	{
+		xPos -= 1;
+		yPos -= 1;
+
+		if (blockList[xPos + 1][yPos + 1] == (BYTE)BLOCK_COLOR::GRAY || xPos + 1 == 0 || yPos + 1 == 0)
+		{
+			return nullptr;
+		}
+
+
+		//if (xPos - 1 >= 0 && yPos + 1 < MAX_HEIGHT)
+		//{
+		//	if (blockList[xPos][yPos + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos + 1][yPos + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckLeftDown(parentNode, destNode, xPos + 1, yPos + 1);
+		//	}
+		//}
+
+		//if (xPos + 1 < MAX_WIDTH && yPos - 1 >= 0)
+		//{
+		//	if (blockList[xPos + 1][yPos] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos + 1][yPos - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckRightUp(parentNode, destNode, xPos + 1, yPos - 1);
+		//	}
+		//}
+
+		CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, xPos, yPos);
+
+		CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, xPos, yPos);
+	}
+
+
 }
 
-JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y)
+JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y,bool firstCall)
 {
 
+	int xPos = x;
+	int yPos = y;
+
+	if (firstCall == true)
+	{
+		if (destNode == CheckLeftHorizontal(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+
+		if (destNode == CheckDownVertical(parentNode, destNode, xPos, yPos))
+		{
+			return destNode;
+		}
+	}
+
+	while (1)
+	{
+
+		xPos -= 1;
+		yPos += 1;
+
+		if (blockList[xPos + 1][yPos - 1] == (BYTE)BLOCK_COLOR::GRAY || xPos + 1 == 0 || yPos == MAX_HEIGHT)
+		{
+			return nullptr;
+		}
+
+		//if (xPos - 1 >= 0 && yPos - 1 >= 0)
+		//{
+		//	if (blockList[xPos][yPos - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos - 1][yPos - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckLeftUp(parentNode, destNode, xPos - 1, xPos - 1, false);
+		//	}
+		//}
+
+		//if (xPos + 1 < MAX_WIDTH && yPos + 1 < MAX_HEIGHT)
+		//{
+		//	if (blockList[xPos + 1][yPos] == (BYTE)BLOCK_COLOR::GRAY && blockList[xPos + 1][yPos + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		//	{
+		//		CheckLeftDown(parentNode, destNode, xPos + 1, yPos + 1, false);
+		//	}
+		//}
+
+		CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, xPos, yPos);
+
+		CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, xPos, yPos);
+
+	}
+
+
 }
 
-JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y)
-{
 
-}
-
-
-
+//====================================================================
+// 대각에서 수평 방향 
+//====================================================================
 JumpPointSearch::NODE* JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y)
 {
 
 	NODE* newOpenNode;
+
+	bool returnFlag = false;
 
 	for (int iCnt = x; iCnt + 1 < MAX_WIDTH; iCnt++)
 	{
@@ -548,15 +843,28 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDiagonalHorizontal(NODE* paren
 	
 		if (iCnt == destNode->mX && y == destNode->mY)
 		{
-			destNode->prev = parentNode;
+			newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
-			return destNode;
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
 		}
 
-		if (y > 0 && y + 1 < MAX_HEIGHT)
+		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
-				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY  && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+			
+				return newOpenNode;
+			}
+		}
+
+		if(y + 1 < MAX_HEIGHT)
+		{
+			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -584,15 +892,28 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parent
 
 		if (iCnt == destNode->mX && y == destNode->mY)
 		{
-			destNode->prev = parentNode;
+			newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
-			return destNode;
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
 		}
 
-		if (y > 0 && y + 1 < MAX_HEIGHT)
+		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC ||
-				blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+		}
+
+		if ( y + 1 < MAX_HEIGHT)
+		{
+			if(blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -620,16 +941,29 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode
 
 		if (x == destNode->mX && iCnt == destNode->mY)
 		{
-			destNode->prev = parentNode;
+			newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
-			return destNode;
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
 		}
 
-		if (x > 0 && x + 1 < MAX_WIDTH)
+		if (x > 0)
+		{
+			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+		}
+
+		if (x + 1 < MAX_WIDTH)
 		{
 
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC ||
-				blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC )
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -658,16 +992,29 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNo
 
 		if (x == destNode->mX && iCnt == destNode->mY)
 		{
-			destNode->prev = parentNode;
+			newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
-			return destNode;
+			openList.PushBack(newOpenNode);
+
+			return newOpenNode;
 		}
 
-		if (x > 0 && x + 1 < MAX_WIDTH)
+		if (x > 0)
+		{
+			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			{
+				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
+
+				openList.PushBack(newOpenNode);
+
+				return newOpenNode;
+			}
+		}
+
+		if (x + 1 < MAX_WIDTH)
 		{
 
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC ||
-				blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 

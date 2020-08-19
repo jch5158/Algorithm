@@ -70,12 +70,12 @@ namespace JumpPointSearch
 
     bool FindCloseList(int openX, int openY);
 
-    NODE* InsertOpenNode(NODE* node, NODE* destinationNode);
+    NODE* InsertOpenNode(NODE* node, NODE* destNode);
 
     NODE* SelectOpenListNode();
 
 
-    NODE* CheckDirection(NODE* node, int* x, int* y);
+    NODE* CheckDirection(NODE* node,NODE* destNode , int x, int y);
 
 
     NODE* CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y);
@@ -88,13 +88,13 @@ namespace JumpPointSearch
 
 
     // 5방향을 체크한다.
-    NODE* CheckRightUp(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckRightUp(NODE* parentNode, NODE* destNode ,int x, int y, bool firstCall = true);
 
-    NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
 
-    NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
 
-    NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
 
 
 
