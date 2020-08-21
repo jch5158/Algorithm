@@ -21,17 +21,7 @@ namespace JumpPointSearch
         float F;
     };
 
-    enum class BLOCK_COLOR
-    {
-        BASIC,
-        RED,
-        GREEN,
-        BLUE,
-        GRAY,
-        YELLOW,
-        BLACK
-    };
-
+    
     enum class NODE_DIRECTION
     {
         NODE_DIR_RR,
@@ -47,8 +37,6 @@ namespace JumpPointSearch
 
 
     extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
-
-    extern BYTE blockList[MAX_WIDTH][MAX_HEIGHT];
 
 
     extern CList<NODE*> openList;
@@ -68,11 +56,6 @@ namespace JumpPointSearch
 
     extern bool funcSetFlag;
 
-
-    // 랜더 변수
-    /*extern HWND hWnd;
-
-    extern HDC hdc;*/
 
 
     NODE* PathFind(int startX, int startY, int destinationX, int destinationY);

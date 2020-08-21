@@ -19,8 +19,31 @@ WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시�
 WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
 
+
+
 extern HWND         hWnd;
 extern HDC          hdc;
+
+extern HBRUSH       oldBrush;
+
+// 오픈리스트
+extern HBRUSH       blueBrush;
+
+// 클로즈 리스트
+extern HBRUSH       yellowBrush;
+
+// 출발지 체크브러쉬
+extern HBRUSH       greenBrush;
+
+// 목적지 체크브러쉬
+extern HBRUSH       redBrush;
+
+// 장애물 체크브러쉬
+extern HBRUSH       grayBrush;
+
+
+
+
 
 
 // red 색상이 칠해진 타일
@@ -152,27 +175,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static HANDLE hTimer;
-
-    static HBRUSH oldBrush;
-
-    // 출발지 체크 브러쉬
-    static HBRUSH greenBrush;
-
-    // 목적지 체크 브러쉬
-    static HBRUSH redBrush;
-
-    // 장애물 체크 브러쉬
-    static HBRUSH grayBrush;
-
-    // 오픈 리스트 체크 브러쉬
-    static HBRUSH blueBrush;
-
-    static HBRUSH yellowBrush;
+    static HANDLE hTimer; 
 
     static HPEN oldPen;
     static HPEN redPen;
-
 
     // 마우스 좌표
     static DWORD mouseX;
@@ -188,14 +194,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
 
         greenBrush = CreateSolidBrush(RGB(0, 255, 0));
-
+        
         redBrush = CreateSolidBrush(RGB(255, 0, 0));
+
+        grayBrush = CreateSolidBrush(RGB(105, 105, 105));
 
         blueBrush = CreateSolidBrush(RGB(0, 0, 255));
 
         yellowBrush = CreateSolidBrush(RGB(255, 255, 0));
-
-        grayBrush = CreateSolidBrush(RGB(105, 105, 105));
 
         redPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
 
@@ -246,20 +252,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             mouseY = HIWORD(lParam);
             mouseX = LOWORD(lParam);
 
-            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::BASIC)
+            // 드래그 하여 장애물 그리기
+            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == oldBrush)
             {
-                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::GRAY;
+                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
 
                 InvalidateRect(hWnd, nullptr, false);
             }
         }
+        // 드래그 하여 장애물 없애기
         else if (wallClearFlag == true)
         {
             mouseY = HIWORD(lParam);
             mouseX = LOWORD(lParam);
-            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::GRAY)
+            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == grayBrush)
             {
-                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::BASIC;
+                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
 
                 InvalidateRect(hWnd, nullptr, false);
             }
@@ -275,32 +283,34 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (MK_CONTROL & wParam)
         {
-            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::GRAY)
+            // 장애물 클리어
+            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == grayBrush)
             {
-                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::BASIC;
+                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
             }
+
 
             wallClearFlag = true;
         }
         else if (MK_SHIFT & wParam)
         {
-
-            if (blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == (BYTE)BLOCK_COLOR::BASIC)
+            // 장애물 만들기
+            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == oldBrush)
             {
-                blockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = (BYTE)BLOCK_COLOR::GRAY;
+                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
             }
-
 
             wallFlag = true;
         }
         else
-        {
-            blockList[greenX][greenY] = (BYTE)BLOCK_COLOR::BASIC;
+        {  
+            
+            brushBlockList[greenX][greenY] = oldBrush;           
 
             greenX = mouseX / PERMETER_OF_SQUARE;
             greenY = mouseY / PERMETER_OF_SQUARE;
 
-            blockList[greenX][greenY] = (BYTE)BLOCK_COLOR::GREEN;
+            brushBlockList[greenX][greenY] = greenBrush;
         }
 
 
@@ -313,12 +323,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         mouseY = HIWORD(lParam);
         mouseX = LOWORD(lParam);
 
-        blockList[redX][redY] = (BYTE)BLOCK_COLOR::BASIC;
+        brushBlockList[redX][redY] = oldBrush;
 
         redX = mouseX / PERMETER_OF_SQUARE;
         redY = mouseY / PERMETER_OF_SQUARE;
 
-        blockList[redX][redY] = (BYTE)BLOCK_COLOR::RED;
+        brushBlockList[redX][redY] = redBrush;
 
         InvalidateRect(hWnd, nullptr, false);
 
@@ -339,36 +349,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
             {
-
-                switch (blockList[iCnt2][iCnt1])
-                {
-                case (BYTE)BLOCK_COLOR::GREEN:
-
-                    oldBrush = (HBRUSH)SelectObject(hdc, greenBrush);
-
-                    break;
-                case (BYTE)BLOCK_COLOR::RED:
-
-                    oldBrush = (HBRUSH)SelectObject(hdc, redBrush);
-
-                    break;
-                case (BYTE)BLOCK_COLOR::GRAY:
-
-                    oldBrush = (HBRUSH)SelectObject(hdc, grayBrush);
-
-                    break;
-                case (BYTE)BLOCK_COLOR::BLUE:
-
-                    oldBrush = (HBRUSH)SelectObject(hdc, blueBrush);
-
-                    break;
-                case (BYTE)BLOCK_COLOR::YELLOW:
-
-                    oldBrush = (HBRUSH)SelectObject(hdc, yellowBrush);
-
-                    break;
-
-                }
+                oldBrush = (HBRUSH)SelectObject(hdc,brushBlockList[iCnt2][iCnt1]);
 
                 Rectangle(hdc, PERMETER_OF_SQUARE * iCnt2, PERMETER_OF_SQUARE * iCnt1, PERMETER_OF_SQUARE * (iCnt2 + 1), PERMETER_OF_SQUARE * (iCnt1 + 1));
 

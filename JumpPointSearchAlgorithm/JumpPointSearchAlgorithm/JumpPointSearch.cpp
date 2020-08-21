@@ -4,11 +4,30 @@
 #include "JumpPointSearch.h"
 
 
-BYTE JumpPointSearch::blockList[MAX_WIDTH][MAX_HEIGHT] = { (BYTE)BLOCK_COLOR::BASIC, };
+HBRUSH JumpPointSearch::brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { nullptr, };
 
 CList<JumpPointSearch::NODE*> JumpPointSearch::openList;
 
 CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
+
+
+HBRUSH oldBrush;
+
+// 오픈리스트
+HBRUSH blueBrush;
+
+// 클로즈 리스트
+HBRUSH yellowBrush;
+
+// 출발지 체크 브러쉬
+HBRUSH greenBrush;
+
+// 목적지 체크 브러쉬
+HBRUSH redBrush;
+
+// 장애물 체크 브러쉬
+HBRUSH grayBrush;
+
 
 //===================================================================
 // 타이머로 자동 함수 호출 시 로직 실행이 되지 않도록 하는 Flag
@@ -327,17 +346,15 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 
 	if (FindCloseList(x, y) == false)
 	{
-
+		// 오픈리스트에 없는 노드라면은 생성
 		retOpenNode = FindOpenList(x, y);
-
 		if (retOpenNode == nullptr)
 		{
 			newNode = (NODE*)malloc(sizeof(NODE));
 
 			newNode->mX = x;
 			newNode->mY = y;
-			blockList[newNode->mX][newNode->mY] = (BYTE)BLOCK_COLOR::BLUE;
-
+		
 			newNode->G = parentNode->G;
 
 			// 부모 노드와 자식 노드의 x,y 차이 값 저장
@@ -369,13 +386,14 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 
 			newNode->prev = parentNode;
 
-			// 블럭 리스트의 색깔을 바꾼다.
-			blockList[x][y] = (BYTE)BLOCK_COLOR::BLUE;
+			// 블럭의 색상을 바꿔준다.
+			brushBlockList[newNode->mX][newNode->mY] = blueBrush;
 
 			return newNode;
 		}
 		else
 		{
+			// 기존 오픈리스트에 있었던 위치라면, 해당 노드의 부모의 G값을 비교하여 새로 연결해준다.
 			if (retOpenNode->prev->G < parentNode->G)
 			{
 
@@ -433,7 +451,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 	//=================================
 	if (y > 0 && x + 1 < MAX_WIDTH)
 	{
-		if (blockList[x][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
 		{	
 			CheckRightUp(parentNode, destNode, x, y, false);	
 		}
@@ -441,7 +459,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 
 	if (y + 1 < MAX_HEIGHT && x + 1 < MAX_WIDTH)
 	{
-		if (blockList[x][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
 		{
 			CheckRightDown(parentNode, destNode, x, y, false);
 		}
@@ -455,7 +473,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 	for (int iCnt = x + 1; iCnt + 1 < MAX_WIDTH; ++iCnt)
 	{
 		// 벽을 만났으 경우 retur nullptr 을 한다.
-		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[iCnt][y] == grayBrush)
 		{
 			return nullptr;
 		}
@@ -473,7 +491,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 		//===================================================
 		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt + 1][y - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
 				if(newOpenNode != nullptr)
@@ -487,7 +505,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 
 		if (y + 1 < MAX_WIDTH)
 		{
-			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt + 1][y + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
 				if (newOpenNode != nullptr)
@@ -511,7 +529,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 	if (y > 0 && x > 0)
 	{
-		if (blockList[x][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
 		{		
 			CheckLeftUp(parentNode, destNode, x, y, false);
 		}
@@ -519,7 +537,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 	if (y + 1 < MAX_HEIGHT && x > 0)
 	{
-		if (blockList[x][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
 		{
 			CheckLeftDown(parentNode, destNode, x, y, false);
 		}
@@ -527,7 +545,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 	for (int iCnt = x - 1; iCnt - 1 > 0; --iCnt)
 	{
-		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[iCnt][y] == grayBrush)
 		{
 			return nullptr;
 		}
@@ -541,7 +559,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt - 1][y - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 
@@ -557,7 +575,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 		if (y + 1 < MAX_HEIGHT)
 		{
-			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt - 1][y + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 				
@@ -581,7 +599,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 
 	if (x > 0 && y > 0)
 	{
-		if (blockList[x - 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
 		{
 			CheckLeftUp(parentNode, destNode, x, y, false);
 		}
@@ -589,9 +607,8 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 
 	if (x + 1 < MAX_WIDTH && y > 0)
 	{
-		if (blockList[x + 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
-		{ 
-		
+		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
+		{ 	
 			CheckRightUp(parentNode, destNode, x, y, false);
 		}
 	}
@@ -599,7 +616,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 	for (int iCnt = y + 1; iCnt - 1 > 0; iCnt--)
 	{
 
-		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[x][iCnt] == grayBrush)
 		{
 			return nullptr;
 		}
@@ -613,7 +630,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 
 		if (x > 0)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
@@ -629,7 +646,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 
 		if (x + 1 < MAX_WIDTH)
 		{
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
@@ -652,7 +669,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 	if (x > 0 && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x - 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
 		{
 			CheckLeftDown(parentNode, destNode, x, y, false);
 		}
@@ -660,7 +677,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x + 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
 		{
 			CheckRightDown(parentNode, destNode, x, y, false);
 		}
@@ -670,7 +687,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 	for (int iCnt = y; iCnt + 1 < MAX_HEIGHT; iCnt++)
 	{
 
-		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[x][iCnt] == grayBrush)
 		{
 			return nullptr;
 		}
@@ -684,7 +701,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 		if (x > 0)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
@@ -699,7 +716,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 		if (x + 1 < MAX_WIDTH)
 		{
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt + 1] == oldBrush)
 			{
 
 				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
@@ -751,7 +768,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 
 	if (x > 0 && y > 0 )
 	{
-		if (blockList[x - 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
 		{
 			leftUpFlag = true;
 		}
@@ -759,7 +776,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 
 	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
 		{
 			rightDownFlag = true;
 		}
@@ -781,7 +798,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 					break;
 				}
 
-				if (blockList[x + xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
 				{
 					rightUpFlag = false;
 					break;
@@ -815,7 +832,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 					break;
 				}
 
-				if (blockList[x - xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
 				{
 					leftUpFlag = false;
 				}
@@ -848,7 +865,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 					break;
 				}
 
-				if (blockList[x + xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
 				{
 					rightDownFlag = false;
 					break;
@@ -908,7 +925,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 
 	if (x + 1 < MAX_WIDTH && y > 0)
 	{
-		if (blockList[x][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
 		{	
 			rightUpFlag = true;
 		}
@@ -916,7 +933,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 
 	if (x > 0 && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x - 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
 		{
 			leftDownFlag = true;
 		}
@@ -940,7 +957,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 					break;
 				}
 
-				if (blockList[x + xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
 				{
 					rightDownFlag = false;
 					break;
@@ -972,7 +989,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 					break;
 				}
 
-				if (blockList[x + xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
 				{
 					rightUpFlag = false;
 					break;
@@ -1005,7 +1022,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 					break;
 				}
 
-				if (blockList[x - xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x - xCount][y + yCount] == grayBrush)
 				{
 					leftDownFlag = false;
 					break;
@@ -1062,7 +1079,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 
 	if (x + 1 < MAX_WIDTH && y > 0)
 	{
-		if (blockList[x + 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
 		{
 			rightUpFlag = true;
 		}
@@ -1070,7 +1087,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 
 	if (x > 0 && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
 		{
 			leftDownFlag = true;
 		}
@@ -1091,7 +1108,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 					break;
 				}
 
-				if (blockList[x - xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
 				{
 					leftUpFlag = false;
 					break;
@@ -1124,7 +1141,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 					break;
 				}
 
-				if (blockList[x + xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
 				{
 					rightUpFlag = false;
 					break;
@@ -1158,7 +1175,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 					break;
 				}
 
-				if (blockList[x - xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x - xCount][y + yCount] == grayBrush)
 				{
 					leftDownFlag = false;
 					break;
@@ -1214,7 +1231,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 
 	if (x > 0 && y > 0)
 	{
-		if (blockList[x][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
 		{
 			leftUpFlag = true;
 		}
@@ -1222,7 +1239,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 
 	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
 	{
-		if (blockList[x + 1][y] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
 		{
 			rightDownFlag = true;
 		}
@@ -1243,7 +1260,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 					break;
 				}
 
-				if (blockList[x- xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x- xCount][y + yCount] == grayBrush)
 				{
 					leftDownFlag = false;
 					break;
@@ -1276,7 +1293,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 					break;
 				}
 
-				if (blockList[x - xCount][y - yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
 				{
 					leftUpFlag = false;
 					break;
@@ -1309,7 +1326,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 					break;
 				}
 
-				if (blockList[x + xCount][y + yCount] == (BYTE)BLOCK_COLOR::GRAY)
+				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
 				{
 					rightDownFlag = false;
 					break;
@@ -1351,7 +1368,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 
 	for (int iCnt = x; iCnt + 1 < MAX_WIDTH; ++iCnt)
 	{
-		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[iCnt][y] == grayBrush)
 		{
 			return false;
 		}
@@ -1371,7 +1388,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 
 		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY  && blockList[iCnt + 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt + 1][y - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1386,7 +1403,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 
 		if(y + 1 < MAX_HEIGHT)
 		{
-			if (blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt + 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt + 1][y + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1412,7 +1429,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 
 	for (int iCnt = x; iCnt > 0; --iCnt)
 	{
-		if (blockList[iCnt][y] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[iCnt][y] == grayBrush)
 		{
 			return false;
 		}		
@@ -1431,7 +1448,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 
 		if (y > 0)
 		{
-			if (blockList[iCnt][y - 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt - 1][y - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1446,7 +1463,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 
 		if (y + 1 < MAX_HEIGHT)
 		{
-			if(blockList[iCnt][y + 1] == (BYTE)BLOCK_COLOR::GRAY && blockList[iCnt - 1][y + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if(brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt - 1][y + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1473,7 +1490,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 
 	for (int iCnt = y; iCnt > 0; --iCnt)
 	{
-		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[x][iCnt] == grayBrush)
 		{
 			return false;
 		}
@@ -1492,7 +1509,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 
 		if (x > 0)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1508,7 +1525,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 		if (x + 1 < MAX_WIDTH)
 		{
 
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt - 1] == (BYTE)BLOCK_COLOR::BASIC )
+			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt - 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1533,7 +1550,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 
 	for (int iCnt = y; iCnt + 1 < MAX_HEIGHT; iCnt++)
 	{
-		if (blockList[x][iCnt] == (BYTE)BLOCK_COLOR::GRAY)
+		if (brushBlockList[x][iCnt] == grayBrush)
 		{
 			return false;
 		}	
@@ -1552,7 +1569,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 
 		if (x > 0)
 		{
-			if (blockList[x - 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x - 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1568,7 +1585,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 		if (x + 1 < MAX_WIDTH)
 		{
 
-			if (blockList[x + 1][iCnt] == (BYTE)BLOCK_COLOR::GRAY && blockList[x + 1][iCnt + 1] == (BYTE)BLOCK_COLOR::BASIC)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt + 1] == oldBrush)
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1609,7 +1626,7 @@ JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 	closeList.PushFront(node);
 
 	// 클로즈리스트이니 색깔을 바꾸어준다.
-	blockList[node->mX][node->mY] = (BYTE)BLOCK_COLOR::YELLOW;
+	brushBlockList[node->mX][node->mY] = yellowBrush;
 
 	return node;
 }
@@ -1699,7 +1716,7 @@ void JumpPointSearch::ResetBlock()
 	{
 		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
 		{
-			blockList[iCntX][iCntY] = (BYTE)BLOCK_COLOR::BASIC;
+			brushBlockList[iCntX][iCntY] = oldBrush;
 		}
 	}
 }
@@ -1713,9 +1730,9 @@ void JumpPointSearch::RouteReset()
 		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
 		{
 
-			if (blockList[iCntX][iCntY] == (BYTE)BLOCK_COLOR::BLUE || blockList[iCntX][iCntY] == (BYTE)BLOCK_COLOR::YELLOW)
+			if (brushBlockList[iCntX][iCntY] == blueBrush || brushBlockList[iCntX][iCntY] == yellowBrush)
 			{
-				blockList[iCntX][iCntY] = (BYTE)BLOCK_COLOR::BASIC;
+				brushBlockList[iCntX][iCntY] = oldBrush;
 			}
 		}
 	}
