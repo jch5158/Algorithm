@@ -46,7 +46,10 @@ namespace JumpPointSearch
     };
 
 
+    extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
+
     extern BYTE blockList[MAX_WIDTH][MAX_HEIGHT];
+
 
     extern CList<NODE*> openList;
 
@@ -62,6 +65,14 @@ namespace JumpPointSearch
 
     // 타이머를 통해서 함수 로직 실행할지를 설정한다.
     extern bool functionFlag;
+
+    extern bool funcSetFlag;
+
+
+    // 랜더 변수
+    /*extern HWND hWnd;
+
+    extern HDC hdc;*/
 
 
     NODE* PathFind(int startX, int startY, int destinationX, int destinationY);
@@ -116,7 +127,11 @@ namespace JumpPointSearch
 
     void ResetBlock();
 
+    void RouteReset();
+
     void ResetAll();
+
+    void ReStart();
 
     void openListBubbleSort();
 };

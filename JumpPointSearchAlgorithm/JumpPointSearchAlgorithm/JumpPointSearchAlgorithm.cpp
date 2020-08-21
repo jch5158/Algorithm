@@ -17,8 +17,11 @@ using namespace JumpPointSearch;
 HINSTANCE           hInst;                                // 현재 인스턴스입니다.
 WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
-HWND                hWnd;
-HDC                 hdc;
+
+
+extern HWND         hWnd;
+extern HDC          hdc;
+
 
 // red 색상이 칠해진 타일
 int                redX;
@@ -29,6 +32,7 @@ int                greenX;
 int                greenY;
 
 bool               returnFlag = false;
+
 
 JumpPointSearch::NODE* retNode;
 
@@ -219,13 +223,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == VK_RETURN)
         {
+            retNode = nullptr;
+            
             returnFlag = true;
-            functionFlag = true;
+            
+            ReStart();
         }
 
         if (wParam == VK_SPACE)
         {
-            functionFlag = false;
             retNode = nullptr;
             ResetAll();
         }

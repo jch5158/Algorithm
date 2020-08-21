@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "CList.h"
+#include "JumpPointSearchAlgorithm.h"
 #include "JumpPointSearch.h"
 
 
@@ -9,8 +10,16 @@ CList<JumpPointSearch::NODE*> JumpPointSearch::openList;
 
 CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
 
+//===================================================================
+// 타이머로 자동 함수 호출 시 로직 실행이 되지 않도록 하는 Flag
+//===================================================================
 bool JumpPointSearch::functionFlag = false;
 
+bool JumpPointSearch::funcSetFlag = true;
+
+HWND hWnd;
+
+HDC hdc;
 
 // 목적지 노드
 JumpPointSearch::NODE* JumpPointSearch::destinationNode = nullptr;
@@ -21,10 +30,18 @@ JumpPointSearch::NODE* JumpPointSearch::startNode = nullptr;
 
 JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY)
 {
-	static bool funcSet = true;
-
+	
 	// 현재 노드
-	static JumpPointSearch::NODE* curNode = nullptr;
+	static JumpPointSearch::NODE* curNode = nullptr;	 
+
+
+	hdc = GetDC(hWnd);
+
+	MoveToEx(hdc, 10, 10, nullptr);
+
+	LineTo(hdc, 100, 50);
+
+	ReleaseDC(hWnd, hdc);
 
 
 	// 엔터를 입력하기 전까지 해당 함수를 호출 시 바로 리턴됩니다.
@@ -33,7 +50,7 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 		return nullptr;
 	}
 
-	if (funcSet == true)
+	if (funcSetFlag == true)
 	{
 		// 목적지 노드 동적할당
 		destinationNode = (NODE*)malloc(sizeof(NODE));
@@ -67,7 +84,7 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 		curNode = startNode;
 
 		// 한번만 시작 셋팅되도록 설정
-		funcSet = false;
+		funcSetFlag = false;
 	}
 
 
@@ -78,7 +95,6 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 	// false일 경우 목적지까지 노드를 만들었다.
 	if (retval == destinationNode)
 	{
-		funcSet = true;
 		functionFlag = false;
 		return retval;
 	}
@@ -134,6 +150,12 @@ bool JumpPointSearch::FindCloseList(int closeX, int closeY)
 
 JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* node, JumpPointSearch::NODE* destNode)
 {
+	if (node == nullptr)
+	{
+		return nullptr;
+	}
+
+
 	NODE* retOpenNode;
 
 	NODE* openNode;
@@ -1572,6 +1594,11 @@ JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 	// F값이 작은 순서로 정렬해놨기 때문에 begin값을 뽑으면 첫 노드를 뽑을 수 있다.
 	CList<JumpPointSearch::NODE*>::Iterator iter = openList.begin();
 
+	if ((*iter)->data == nullptr)
+	{
+		return nullptr;
+	}
+
 	// 노드의 값을 복사한다.
 	NODE* node = (*iter)->data;
 
@@ -1592,10 +1619,17 @@ JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 // 모든 리스트와 블럭을 초기화 시킨다.
 //=============================================================
 void JumpPointSearch::ResetAll()
-{
-	free(startNode);
+{	
+	if (funcSetFlag == false)
+	{
+		free(startNode);
 
-	free(destinationNode);
+ 		free(destinationNode);
+	}
+
+	functionFlag = false;
+
+	funcSetFlag = true;
 
 	ResetOpenList();
 
@@ -1604,6 +1638,26 @@ void JumpPointSearch::ResetAll()
 	ResetBlock();
 }
 
+
+void JumpPointSearch::ReStart()
+{
+	if (funcSetFlag == false)
+	{
+		free(startNode);
+
+		free(destinationNode);
+	}
+
+	functionFlag = true;
+
+	funcSetFlag = true;
+
+	ResetOpenList();
+
+	ResetCloseList();
+
+	RouteReset();
+}
 
 
 //=============================================================
@@ -1634,6 +1688,7 @@ void JumpPointSearch::ResetCloseList()
 	}
 }
 
+
 //=============================================================
 // 블럭들을 리셋한다.
 //=============================================================
@@ -1649,6 +1704,22 @@ void JumpPointSearch::ResetBlock()
 	}
 }
 
+
+
+void JumpPointSearch::RouteReset()
+{
+	for (int iCntY = 0; iCntY < MAX_HEIGHT; iCntY++)
+	{
+		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
+		{
+
+			if (blockList[iCntX][iCntY] == (BYTE)BLOCK_COLOR::BLUE || blockList[iCntX][iCntY] == (BYTE)BLOCK_COLOR::YELLOW)
+			{
+				blockList[iCntX][iCntY] = (BYTE)BLOCK_COLOR::BASIC;
+			}
+		}
+	}
+}
 
 //=============================================================
 // F값 작은 순으로 정렬한다.
