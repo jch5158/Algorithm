@@ -11,5 +11,6 @@
 
 #include <Windows.h>
 #include <iostream>
+#include <time.h>
 #include <tchar.h>
 

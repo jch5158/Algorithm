@@ -72,33 +72,33 @@ namespace JumpPointSearch
     NODE* CheckDirection(NODE* node,NODE* destNode , int x, int y);
 
 
-    NODE* CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
-    NODE* CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
-    NODE* CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
-    NODE* CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y);
+    NODE* CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
 
     // 5방향을 체크한다.
-    NODE* CheckRightUp(NODE* parentNode, NODE* destNode ,int x, int y, bool firstCall = true);
+    NODE* CheckRightUp(NODE* parentNode, NODE* destNode ,int x, int y, HBRUSH randBrush ,bool firstCall = true);
 
-    NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
+    NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
 
-    NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
+    NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
 
-    NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y, bool firstCall = true);
+    NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
 
 
 
-    bool CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y);
+    bool CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush);
 
-    bool CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+    bool CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
 
-    bool CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+    bool CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
 
-    bool CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y);
+    bool CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
 
 
     NODE* SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir ,int x, int y);

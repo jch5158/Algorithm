@@ -41,11 +41,6 @@ extern HBRUSH       redBrush;
 // 장애물 체크브러쉬
 extern HBRUSH       grayBrush;
 
-
-
-
-
-
 // red 색상이 칠해진 타일
 int                redX;
 int                redY;
@@ -93,6 +88,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_JUMPPOINTSEARCHALGORITHM));
 
     MSG msg;
+
+    srand((unsigned)time(NULL));
 
     // 기본 메시지 루프입니다:
     while (GetMessage(&msg, nullptr, 0, 0))
@@ -239,6 +236,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (wParam == VK_SPACE)
         {
             retNode = nullptr;
+
             ResetAll();
         }
 
@@ -253,24 +251,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             mouseX = LOWORD(lParam);
 
             // 드래그 하여 장애물 그리기
-            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == oldBrush)
-            {
-                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
+            brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
 
-                InvalidateRect(hWnd, nullptr, false);
-            }
+            InvalidateRect(hWnd, nullptr, false);            
         }
         // 드래그 하여 장애물 없애기
         else if (wallClearFlag == true)
         {
             mouseY = HIWORD(lParam);
             mouseX = LOWORD(lParam);
-            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == grayBrush)
-            {
-                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
+            
+            brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
 
-                InvalidateRect(hWnd, nullptr, false);
-            }
+            InvalidateRect(hWnd, nullptr, false);            
         }
 
 
@@ -284,21 +277,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (MK_CONTROL & wParam)
         {
             // 장애물 클리어
-            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == grayBrush)
-            {
-                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
-            }
-
-
+            
+            brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = oldBrush;
+            
             wallClearFlag = true;
         }
         else if (MK_SHIFT & wParam)
         {
             // 장애물 만들기
-            if (brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] == oldBrush)
-            {
-                brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
-            }
+            
+            brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = grayBrush;
+            
 
             wallFlag = true;
         }
