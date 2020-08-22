@@ -3,19 +3,31 @@
 
 #include "stdafx.h"
 #include "framework.h"
+#include "BresenhamLine.h"
 #include "Bresenham'sLineAlgorithm.h"
+
 
 #define MAX_LOADSTRING 100
 
+using namespace BresenhamLine;
+
 // 전역 변수:
-HINSTANCE hInst;                                // 현재 인스턴스입니다.
-WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
-WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HINSTANCE           hInst;                                // 현재 인스턴스입니다.
+WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
+WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HWND                hWnd;
+HDC                 hdc;
+
+extern HBRUSH       oldBrush;
+
+// 출발지 브러쉬
+extern HBRUSH       greenBrush;
+
+// 목적지 브러쉬
+extern HBRUSH       redBrush;
 
 
-HWND hWnd;
-HDC hdc;
-
+extern HBRUSH       blackBrush;
                                                 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -132,8 +144,31 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+
+    static int mouseX;
+    static int mouseY;
+
+    static int endMouseX;
+    static int endMouseY;
+
+    static bool moveCheckFlag = false;
+
+    static HPEN redPen;
+    static HPEN oldPen;
+
     switch (message)
     {
+    case WM_CREATE:
+
+        greenBrush = CreateSolidBrush(RGB(0, 255, 0));
+
+        redBrush = CreateSolidBrush(RGB(255, 0, 0));
+        
+        blackBrush = CreateSolidBrush(RGB(0, 0, 0));
+
+        redPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+
+        break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -151,12 +186,76 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
+
+    case WM_LBUTTONDOWN:
+        
+        mouseY = HIWORD(lParam);
+        mouseX = LOWORD(lParam);
+
+        brushBlockList[mouseX / PERMETER_OF_SQUARE][mouseY / PERMETER_OF_SQUARE] = blackBrush;
+
+        moveCheckFlag = true;
+
+        InvalidateRect(hWnd, nullptr, false);
+
+        break;
+
+    case WM_MOUSEMOVE:
+
+        if (moveCheckFlag)
+        {
+            for (int iCnt1 = 0; iCnt1 < MAX_HEIGHT; iCnt1++)
+            {
+                for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
+                {
+                    if (brushBlockList[iCnt2][iCnt1] == blackBrush)
+                    {
+                        brushBlockList[iCnt2][iCnt1] = oldBrush;
+                    }
+                }
+            }
+
+            endMouseY = HIWORD(lParam);
+            endMouseX = LOWORD(lParam);
+
+
+
+            MakeLine(mouseX / PERMETER_OF_SQUARE, mouseY / PERMETER_OF_SQUARE, endMouseX / PERMETER_OF_SQUARE, endMouseY / PERMETER_OF_SQUARE);
+
+           
+            InvalidateRect(hWnd, nullptr, false);
+        }
+        break;
+
+    case WM_LBUTTONUP:
+
+        moveCheckFlag = false;
+
+        break;
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
             hdc = BeginPaint(hWnd, &ps);
             
+            for (int iCnt1 = 0; iCnt1 < MAX_HEIGHT; iCnt1++)
+            {
+                for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
+                {
+                    oldBrush = (HBRUSH)SelectObject(hdc, brushBlockList[iCnt2][iCnt1]);
+
+                    Rectangle(hdc, PERMETER_OF_SQUARE * iCnt2, PERMETER_OF_SQUARE * iCnt1, PERMETER_OF_SQUARE * (iCnt2 + 1), PERMETER_OF_SQUARE * (iCnt1 + 1));
+
+                    SelectObject(hdc, oldBrush);
+                }
+            }
             
+            oldPen = (HPEN)SelectObject(hdc, redPen);
+
+            MoveToEx(hdc, mouseX, mouseY, nullptr);
+
+            LineTo(hdc, endMouseX, endMouseY);
+
+            SelectObject(hdc, oldPen);
             
             EndPaint(hWnd, &ps);
         }

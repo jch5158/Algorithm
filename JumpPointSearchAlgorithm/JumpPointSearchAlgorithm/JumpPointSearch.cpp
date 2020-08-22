@@ -3,14 +3,6 @@
 #include "JumpPointSearchAlgorithm.h"
 #include "JumpPointSearch.h"
 
-
-HBRUSH JumpPointSearch::brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { nullptr, };
-
-CList<JumpPointSearch::NODE*> JumpPointSearch::openList;
-
-CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
-
-
 HBRUSH oldBrush;
 
 // 오픈리스트
@@ -27,6 +19,14 @@ HBRUSH redBrush;
 
 // 장애물 체크 브러쉬
 HBRUSH grayBrush;
+
+
+HBRUSH JumpPointSearch::brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { oldBrush, };
+
+CList<JumpPointSearch::NODE*> JumpPointSearch::openList;
+
+CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
+
 
 
 //===================================================================
