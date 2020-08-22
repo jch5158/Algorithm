@@ -2004,6 +2004,10 @@ void JumpPointSearch::PathOptimizing()
 
 			if (nextNextIter == iterE)
 			{
+
+				--nextNextIter;
+
+				iter = nextIter;
 				break;
 			}
 
@@ -2012,13 +2016,12 @@ void JumpPointSearch::PathOptimizing()
 
 			if (BresenhamLine::MakeLine(startX, startY, nextEndX, nextEndY))
 			{
-				optimizeRouteList.erase(nextIter);
-
+				
 				(*nextIter)->deleteCheck = true;
 			}
 			else
 			{
-				--nextIter;
+				--nextNextIter;
 
 				iter = nextIter;
 
@@ -2028,8 +2031,6 @@ void JumpPointSearch::PathOptimizing()
 	}
 
 
-
-	//iter = optimizeRouteList.begin();
 
 	for (iter = optimizeRouteList.begin(); iter != iterE;)
 	{
