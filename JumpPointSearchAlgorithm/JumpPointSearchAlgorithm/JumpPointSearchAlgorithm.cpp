@@ -5,12 +5,12 @@
 #include "stdafx.h"
 #include "framework.h"
 #include "CList.h"
-#include "JumpPointSearchAlgorithm.h"
 #include "JumpPointSearch.h"
+#include "BresenhamLine.h"
+#include "JumpPointSearchAlgorithm.h"
 
 #define MAX_LOADSTRING 100
 
-using namespace JumpPointSearch;
 
 
 // 전역 변수:
@@ -18,28 +18,35 @@ HINSTANCE           hInst;                                // 현재 인스턴스
 WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
+//extern bool JumpPointSearch::functionFlag;
+//
+//extern bool JumpPointSearch::funcSetFlag;
+
+
+extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
 
 
 
-extern HWND         hWnd;
-extern HDC          hdc;
+HWND         hWnd;
+HDC          hdc;
 
-extern HBRUSH       oldBrush;
+
+HBRUSH       oldBrush;
 
 // 오픈리스트
-extern HBRUSH       blueBrush;
+HBRUSH       blueBrush;
 
 // 클로즈 리스트
-extern HBRUSH       yellowBrush;
+HBRUSH       yellowBrush;
 
 // 출발지 체크브러쉬
-extern HBRUSH       greenBrush;
+HBRUSH       greenBrush;
 
 // 목적지 체크브러쉬
-extern HBRUSH       redBrush;
+HBRUSH       redBrush;
 
 // 장애물 체크브러쉬
-extern HBRUSH       grayBrush;
+HBRUSH       grayBrush;
 
 // red 색상이 칠해진 타일
 int                redX;
@@ -51,9 +58,12 @@ int                greenY;
 
 bool               returnFlag = false;
 
-
 JumpPointSearch::NODE* retNode;
 
+
+extern CList<JumpPointSearch::NODE*> routeList;
+
+extern CList<JumpPointSearch::NODE*> optimizeRouteList;
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -176,6 +186,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     static HPEN oldPen;
     static HPEN redPen;
+    static HPEN pinkPen;
 
     // 마우스 좌표
     static DWORD mouseX;
@@ -201,6 +212,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         yellowBrush = CreateSolidBrush(RGB(255, 255, 0));
 
         redPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+
+        pinkPen = CreatePen(PS_SOLID, 2, RGB(255, 105, 180));
 
         hTimer = (HANDLE)SetTimer(hWnd, 1, 50, (TIMERPROC)TimerProc);
 
@@ -230,14 +243,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             
             returnFlag = true;
             
-            ReStart();
+            JumpPointSearch::ReStart();
         }
 
         if (wParam == VK_SPACE)
         {
             retNode = nullptr;
 
-            ResetAll();
+            JumpPointSearch::ResetAll();
         }
 
         InvalidateRect(hWnd, nullptr, false);
@@ -294,7 +307,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         else
         {  
             
-            brushBlockList[greenX][greenY] = oldBrush;           
+            brushBlockList[greenX][greenY] = oldBrush;
 
             greenX = mouseX / PERMETER_OF_SQUARE;
             greenY = mouseY / PERMETER_OF_SQUARE;
@@ -338,7 +351,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
             {
-                oldBrush = (HBRUSH)SelectObject(hdc,brushBlockList[iCnt2][iCnt1]);
+                oldBrush = (HBRUSH)SelectObject(hdc, brushBlockList[iCnt2][iCnt1]);
 
                 Rectangle(hdc, PERMETER_OF_SQUARE * iCnt2, PERMETER_OF_SQUARE * iCnt1, PERMETER_OF_SQUARE * (iCnt2 + 1), PERMETER_OF_SQUARE * (iCnt1 + 1));
 
@@ -350,23 +363,70 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         oldPen = (HPEN)SelectObject(hdc, redPen);
 
-        while (1)
+        do
         {
             if (paintNode == nullptr)
             {
                 break;
             }
 
+            oldPen = (HPEN)SelectObject(hdc, redPen);
 
-            MoveToEx(hdc, 10 + (paintNode->mX * PERMETER_OF_SQUARE), 10 + (paintNode->mY * PERMETER_OF_SQUARE), nullptr);
+            CList<JumpPointSearch::NODE*>::Iterator iterE = routeList.end();
 
-            paintNode = paintNode->prev;
-
-            if (paintNode != nullptr)
+            CList<JumpPointSearch::NODE*>::Iterator iter = routeList.begin();
+            
+            while (1)
             {
-                LineTo(hdc, 10 + (paintNode->mX * PERMETER_OF_SQUARE), 10 + (paintNode->mY * PERMETER_OF_SQUARE));
+                MoveToEx(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE), nullptr);
+
+                ++iter;
+
+                if (iter == iterE)
+                {
+                    break;
+                }
+
+                LineTo(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE));
             }
-        }
+
+            SelectObject(hdc, oldPen);
+
+        } while (0);
+
+
+        do
+        {
+            if (paintNode == nullptr)
+            {
+                break;
+            }
+
+            oldPen = (HPEN)SelectObject(hdc, pinkPen);
+
+            CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
+
+            CList<JumpPointSearch::NODE*>::Iterator iter = optimizeRouteList.begin();
+
+            while (1)
+            {
+                MoveToEx(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE), nullptr);
+
+                ++iter;
+
+                if (iter == iterE)
+                {
+                    break;
+                }
+
+                LineTo(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE));
+            }
+
+            SelectObject(hdc, oldPen);
+
+        } while (0);
+
+
 
 
         EndPaint(hWnd, &ps);
@@ -396,7 +456,7 @@ void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 
     if (returnFlag == true)
     {
-        retNode = PathFind(greenX, greenY, redX, redY);
+        retNode = JumpPointSearch::PathFind(greenX, greenY, redX, redY);
         InvalidateRect(hWnd, nullptr, false);
         if (retNode != nullptr)
         {

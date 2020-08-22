@@ -40,9 +40,10 @@ public:
 		}
 
 		Iterator NextIter()
-		{
+		{		
 			Iterator iter(this->node->next);
-			return iter;
+			
+			return iter;	
 		}
 
 
@@ -64,7 +65,6 @@ public:
 		const Iterator& operator--(int)
 		{
 			const Iterator iterator(this->node->prev);
-
 			return iterator;
 		}
 

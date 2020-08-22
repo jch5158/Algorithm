@@ -1,50 +1,60 @@
 #include "stdafx.h"
 #include "CList.h"
 #include "JumpPointSearchAlgorithm.h"
+#include "BresenhamLine.h"
 #include "JumpPointSearch.h"
 
-HBRUSH oldBrush;
+
+extern HBRUSH       oldBrush;
 
 // 오픈리스트
-HBRUSH blueBrush;
+extern HBRUSH       blueBrush;
 
 // 클로즈 리스트
-HBRUSH yellowBrush;
+extern HBRUSH       yellowBrush;
 
-// 출발지 체크 브러쉬
-HBRUSH greenBrush;
+// 출발지 체크브러쉬
+extern HBRUSH       greenBrush;
 
-// 목적지 체크 브러쉬
-HBRUSH redBrush;
+// 목적지 체크브러쉬
+extern HBRUSH       redBrush;
 
-// 장애물 체크 브러쉬
-HBRUSH grayBrush;
+// 장애물 체크브러쉬
+extern HBRUSH       grayBrush;
 
 
-HBRUSH JumpPointSearch::brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { oldBrush, };
+// 목적지 노드
+JumpPointSearch::NODE* destinationNode = nullptr;
 
-CList<JumpPointSearch::NODE*> JumpPointSearch::openList;
+// 시작지 노드
+JumpPointSearch::NODE* startNode = nullptr;
 
-CList<JumpPointSearch::NODE*> JumpPointSearch::closeList;
 
+CList<JumpPointSearch::NODE*> openList;
+
+CList<JumpPointSearch::NODE*> closeList;
+
+CList<JumpPointSearch::NODE*> routeList;
+
+CList<JumpPointSearch::NODE*> optimizeRouteList;
+
+
+HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { nullptr, };
 
 
 //===================================================================
 // 타이머로 자동 함수 호출 시 로직 실행이 되지 않도록 하는 Flag
 //===================================================================
-bool JumpPointSearch::functionFlag = false;
+bool functionFlag = false;
+//
+bool funcSetFlag = true;
 
-bool JumpPointSearch::funcSetFlag = true;
-
-HWND hWnd;
-
-HDC hdc;
 
 // 목적지 노드
-JumpPointSearch::NODE* JumpPointSearch::destinationNode = nullptr;
+//JumpPointSearch::NODE* JumpPointSearch::destinationNode = nullptr;
 
 // 시작지 노드
-JumpPointSearch::NODE* JumpPointSearch::startNode = nullptr;
+//JumpPointSearch::NODE* JumpPointSearch::startNode = nullptr;
 
 
 JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY)
@@ -53,14 +63,6 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 	// 현재 노드
 	static JumpPointSearch::NODE* curNode = nullptr;	 
 
-
-	hdc = GetDC(hWnd);
-
-	MoveToEx(hdc, 10, 10, nullptr);
-
-	LineTo(hdc, 100, 50);
-
-	ReleaseDC(hWnd, hdc);
 
 
 	// 엔터를 입력하기 전까지 해당 함수를 호출 시 바로 리턴됩니다.
@@ -114,6 +116,10 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 	// false일 경우 목적지까지 노드를 만들었다.
 	if (retval == destinationNode)
 	{
+		InsertRoute(destinationNode);
+
+		PathOptimizing();
+
 		functionFlag = false;
 		return retval;
 	}
@@ -1816,6 +1822,10 @@ void JumpPointSearch::ResetAll()
 
 	ResetCloseList();
 
+	ResetRouteList();
+
+	OptimizeRouteReset();
+
 	ResetBlock();
 }
 
@@ -1837,7 +1847,11 @@ void JumpPointSearch::ReStart()
 
 	ResetCloseList();
 
+	ResetRouteList();
+
 	RouteReset();
+
+	OptimizeRouteReset();
 }
 
 
@@ -1868,6 +1882,29 @@ void JumpPointSearch::ResetCloseList()
 		iter = closeList.erase(iter);
 	}
 }
+
+
+void JumpPointSearch::ResetRouteList()
+{
+	CList<JumpPointSearch::NODE*>::Iterator iterE = routeList.end();
+
+	for (CList<JumpPointSearch::NODE*>::Iterator iter = routeList.begin(); iter != iterE;)
+	{
+		iter = routeList.erase(iter);
+	}
+}
+
+
+void JumpPointSearch::OptimizeRouteReset()
+{
+	CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
+
+	for (CList<JumpPointSearch::NODE*>::Iterator iter = optimizeRouteList.begin(); iter != iterE;)
+	{
+		iter = routeList.erase(iter);
+	}
+}
+
 
 
 //=============================================================
@@ -1903,24 +1940,130 @@ void JumpPointSearch::RouteReset()
 }
 
 
+void JumpPointSearch::InsertRoute(NODE* node)
+{
+
+	while (1)
+	{	
+		routeList.PushFront(node);
+
+		optimizeRouteList.PushFront(node);
+
+		if (node->prev == nullptr)
+		{
+			break;
+		}
+
+		node = node->prev;
+	}
+
+}
+
+
+void JumpPointSearch::PathOptimizing()
+{
+
+	int startX;
+	int startY;
+
+	int endX;
+	int endY;
+
+	int nextEndX;
+	int nextEndY;
+
+	CList<JumpPointSearch::NODE*>::Iterator nextIter;
+
+	CList<JumpPointSearch::NODE*>::Iterator nextNextIter;
+
+
+	CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
+
+	CList<JumpPointSearch::NODE*>::Iterator iter = optimizeRouteList.begin();
+
+	while(1)
+	{
+		startX = iter->mX;
+		startY = iter->mY;
+
+		nextIter = iter.NextIter();
+		
+		if (nextIter == iterE)
+		{
+			break;
+		}
+
+		endX = nextIter->mX;
+		endY = nextIter->mY;
+
+		nextNextIter = nextIter;
+
+		while (1)
+		{
+			nextNextIter = nextNextIter.NextIter();
+
+			if (nextNextIter == iterE)
+			{
+				break;
+			}
+
+			nextEndX = nextNextIter->mX;
+			nextEndY = nextNextIter->mY;
+
+			if (BresenhamLine::MakeLine(startX, startY, nextEndX, nextEndY))
+			{
+				optimizeRouteList.erase(nextIter);
+
+				(*nextIter)->deleteCheck = true;
+			}
+			else
+			{
+				--nextIter;
+
+				iter = nextIter;
+
+				break;
+			}
+		}
+	}
+
+
+
+	//iter = optimizeRouteList.begin();
+
+	for (iter = optimizeRouteList.begin(); iter != iterE;)
+	{
+		if ((*iter)->deleteCheck)
+		{
+			iter = optimizeRouteList.erase(iter);
+		}
+		else
+		{
+			++iter;
+		}
+	}
+
+}
+
+
 //=============================================================
 // F값 작은 순으로 정렬한다.
 //=============================================================
 void JumpPointSearch::openListBubbleSort() {
 
-	CList<JumpPointSearch::NODE*>::Iterator iterE = JumpPointSearch::openList.end();
+	CList<JumpPointSearch::NODE*>::Iterator iterE = openList.end();
 
 	--iterE;
 
-	for (int iCnt = 0; iCnt < JumpPointSearch::openList.listLength; iCnt++)
+	for (int iCnt = 0; iCnt < openList.listLength; iCnt++)
 	{
-		for (CList<JumpPointSearch::NODE*>::Iterator iter = JumpPointSearch::openList.begin(); iter != iterE; ++iter)
+		for (CList<JumpPointSearch::NODE*>::Iterator iter = openList.begin(); iter != iterE; ++iter)
 		{
 			CList<JumpPointSearch::NODE*>::Iterator iterN = iter.node->next;
 
 			if (iter->F > iterN->F)
 			{
-				JumpPointSearch::openList.DataSwap(iter, iterN);
+				openList.DataSwap(iter, iterN);
 			}
 		}
 

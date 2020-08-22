@@ -36,28 +36,6 @@ namespace JumpPointSearch
     };
 
 
-    extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
-
-
-    extern CList<NODE*> openList;
-
-    extern CList<NODE*> closeList;
-
-
-    // 목적지 노드
-    extern NODE* destinationNode;
-
-    // 시작지 노드
-    extern NODE* startNode;
-
-
-    // 타이머를 통해서 함수 로직 실행할지를 설정한다.
-    extern bool functionFlag;
-
-    extern bool funcSetFlag;
-
-
-
     NODE* PathFind(int startX, int startY, int destinationX, int destinationY);
 
     NODE* FindOpenList(int openX, int openY);
@@ -104,13 +82,21 @@ namespace JumpPointSearch
     NODE* SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir ,int x, int y);
 
 
+    void InsertRoute(NODE* node);
+
+    void PathOptimizing();
+
     void ResetOpenList();
 
     void ResetCloseList();
 
+    void ResetRouteList();
+
     void ResetBlock();
 
     void RouteReset();
+
+    void OptimizeRouteReset();
 
     void ResetAll();
 

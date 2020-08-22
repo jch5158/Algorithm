@@ -218,10 +218,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             endMouseY = HIWORD(lParam);
             endMouseX = LOWORD(lParam);
 
-
-
             MakeLine(mouseX / PERMETER_OF_SQUARE, mouseY / PERMETER_OF_SQUARE, endMouseX / PERMETER_OF_SQUARE, endMouseY / PERMETER_OF_SQUARE);
-
            
             InvalidateRect(hWnd, nullptr, false);
         }

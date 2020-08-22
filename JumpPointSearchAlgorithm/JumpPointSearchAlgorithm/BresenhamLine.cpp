@@ -1,24 +1,15 @@
 #include "stdafx.h"
-#include "Bresenham'sLineAlgorithm.h"
+#include "CList.h"
+#include "JumpPointSearch.h"
+#include "JumpPointSearchAlgorithm.h"
 #include "BresenhamLine.h"
 
+extern HBRUSH grayBrush;
 
-HBRUSH		 oldBrush;
-
-// 출발지 브러쉬
-HBRUSH       greenBrush;
-
-// 목적지 브러쉬
-HBRUSH       redBrush;
+extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
 
 
-HBRUSH       blackBrush;
-
-
-HBRUSH BresenhamLine::brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { oldBrush };
-
-
-void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
+bool BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 {
 	int subX = abs(startX - endX);
 
@@ -39,7 +30,7 @@ void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 		while (1)
 		{
 			if (startX <= endX)
-			{			
+			{
 				indexX = startX + lineX;
 			}
 			else
@@ -56,7 +47,11 @@ void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 				indexY = startY - lineY;
 			}
 
-			brushBlockList[indexX][indexY] = blackBrush;
+			if (brushBlockList[indexX][indexY] == grayBrush)
+			{
+				return false;
+			}
+
 
 			if (subX == lineX && subY == lineY)
 			{
@@ -99,7 +94,10 @@ void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 				indexY = startY - lineY;
 			}
 
-			brushBlockList[indexX][indexY] = blackBrush;
+			if (brushBlockList[indexX][indexY] == grayBrush)
+			{
+				return false;
+			}
 
 			if (subX == lineX && subY == lineY)
 			{
@@ -107,7 +105,7 @@ void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 			}
 
 			lineY += 1;
-			
+
 			errorValue += subX * 2;
 
 			if (subY * 2 <= errorValue)
@@ -119,5 +117,5 @@ void BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 	}
 
 
-
+	return true;
 }
