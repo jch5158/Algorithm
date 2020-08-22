@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Bresenham'sLineAlgorithm", "Bresenham'sLineAlgorithm\Bresenham'sLineAlgorithm.vcxproj", "{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Debug|x64.ActiveCfg = Debug|x64
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Debug|x64.Build.0 = Debug|x64
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Debug|x86.ActiveCfg = Debug|Win32
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Debug|x86.Build.0 = Debug|Win32
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Release|x64.ActiveCfg = Release|x64
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Release|x64.Build.0 = Release|x64
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Release|x86.ActiveCfg = Release|Win32
+		{25615CE8-0298-42B6-8CB7-47CE96CD4DEA}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3A3A9D68-7000-412A-877A-23F1FCE0F1CF}
+	EndGlobalSection
+EndGlobal

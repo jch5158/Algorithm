@@ -347,6 +347,8 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 	int subX;
 	int subY;
 
+
+
 	if (FindCloseList(x, y) == false)
 	{
 		// 오픈리스트에 없는 노드라면은 생성
@@ -390,8 +392,12 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 			newNode->prev = parentNode;
 
 			// 블럭의 색상을 바꿔준다.
-			brushBlockList[newNode->mX][newNode->mY] = blueBrush;
 
+			if (x != destNode->mX && y != destNode->mY)
+			{
+				brushBlockList[newNode->mX][newNode->mY] = blueBrush;
+			}
+			
 			return newNode;
 		}
 		else
@@ -1888,7 +1894,7 @@ void JumpPointSearch::RouteReset()
 		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
 		{
 
-			if (brushBlockList[iCntX][iCntY] == blueBrush || brushBlockList[iCntX][iCntY] == yellowBrush)
+			if (brushBlockList[iCntX][iCntY] != redBrush && brushBlockList[iCntX][iCntY] != greenBrush && brushBlockList[iCntX][iCntY] != grayBrush)
 			{
 				brushBlockList[iCntX][iCntY] = oldBrush;
 			}
