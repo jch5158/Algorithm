@@ -18,15 +18,6 @@ HINSTANCE           hInst;                                // 현재 인스턴스
 WCHAR               szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR               szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
-//extern bool JumpPointSearch::functionFlag;
-//
-//extern bool JumpPointSearch::funcSetFlag;
-
-
-extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
-
-
-
 HWND         hWnd;
 HDC          hdc;
 
@@ -64,6 +55,10 @@ JumpPointSearch::NODE* retNode;
 extern CList<JumpPointSearch::NODE*> routeList;
 
 extern CList<JumpPointSearch::NODE*> optimizeRouteList;
+
+
+extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
+
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -201,6 +196,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
 
+        hdc = GetDC(hWnd);
+
         greenBrush = CreateSolidBrush(RGB(0, 255, 0));
         
         redBrush = CreateSolidBrush(RGB(255, 0, 0));
@@ -216,6 +213,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         pinkPen = CreatePen(PS_SOLID, 2, RGB(255, 105, 180));
 
         hTimer = (HANDLE)SetTimer(hWnd, 1, 50, (TIMERPROC)TimerProc);
+
+        oldBrush = (HBRUSH)SelectObject(hdc, greenBrush);
+
+        for (int iCnt1 = 0; iCnt1 < MAX_HEIGHT; iCnt1++)
+        {
+            for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
+            {
+                brushBlockList[iCnt2][iCnt1] = oldBrush;
+            }
+        }
+
+        SelectObject(hdc, oldBrush);
+
+        ReleaseDC(hWnd, hdc);
 
         break;
     case WM_COMMAND:
@@ -457,11 +468,13 @@ void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
     if (returnFlag == true)
     {
         retNode = JumpPointSearch::PathFind(greenX, greenY, redX, redY);
-        InvalidateRect(hWnd, nullptr, false);
         if (retNode != nullptr)
         {
             returnFlag = false;
         }
+
+        InvalidateRect(hWnd, nullptr, false);
+
     }
 
 }

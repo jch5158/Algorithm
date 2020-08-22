@@ -39,7 +39,7 @@ CList<JumpPointSearch::NODE*> routeList;
 CList<JumpPointSearch::NODE*> optimizeRouteList;
 
 
-HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT] = { nullptr, };
+HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
 
 
 //===================================================================
@@ -121,6 +121,7 @@ JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int des
 		PathOptimizing();
 
 		functionFlag = false;
+
 		return retval;
 	}
 	else
@@ -179,7 +180,6 @@ JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* no
 	{
 		return nullptr;
 	}
-
 
 	NODE* retOpenNode;
 
@@ -866,7 +866,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 	//==================================================
 	if (x > 0 && y > 0 )
 	{
-		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
+		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
 		{
 			leftUpFlag = true;
 		}
