@@ -697,7 +697,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
 		{
 			brushBlockList[x][iCnt] = randBrush;
 		}
@@ -795,7 +795,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
 		{
 			brushBlockList[x][iCnt] = randBrush;
 		}
@@ -833,7 +833,6 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 
 	return nullptr;
 }
-
 
 
 
@@ -1274,7 +1273,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
 		{
 			brushBlockList[x][iCnt] = randBrush;
 		}
@@ -1341,7 +1340,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
 		{
 			brushBlockList[x][iCnt] = randBrush;
 		}
