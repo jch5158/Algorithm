@@ -5,24 +5,6 @@
 #include "JumpPointSearch.h"
 
 
-extern HBRUSH       oldBrush;
-
-// 오픈리스트
-extern HBRUSH       blueBrush;
-
-// 클로즈 리스트
-extern HBRUSH       yellowBrush;
-
-// 출발지 체크브러쉬
-extern HBRUSH       greenBrush;
-
-// 목적지 체크브러쉬
-extern HBRUSH       redBrush;
-
-// 장애물 체크브러쉬
-extern HBRUSH       grayBrush;
-
-
 // 목적지 노드
 JumpPointSearch::NODE* destinationNode = nullptr;
 
@@ -204,8 +186,19 @@ JumpPointSearch::NODE* JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* no
 JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, NODE* destNode,int x, int y)
 {
 	NODE* retNode;
+	
+	HBRUSH randBrush;
 
-	HBRUSH randBrush = CreateSolidBrush(RGB(rand() % 256, rand() % 256, rand() % 256));
+	do
+	{
+		randBrush = CreateSolidBrush(RGB(rand() % 156 + 100, rand() % 156 + 100, rand() % 156 + 100));
+
+		if (randBrush == grayBrush || randBrush == routeBrush)
+		{
+			continue;
+		}
+
+	} while (0);
 
 
 	switch ((NODE_DIRECTION)node->mNodeDir)
@@ -1959,7 +1952,9 @@ void JumpPointSearch::InsertRoute(NODE* node)
 
 }
 
-
+//====================================================
+// 최적화 길을 설정하는 함수입니다.
+//====================================================
 void JumpPointSearch::PathOptimizing()
 {
 
@@ -1972,10 +1967,11 @@ void JumpPointSearch::PathOptimizing()
 	int nextEndX;
 	int nextEndY;
 
+	// 기준 노드의 다음 노드입니다.
 	CList<JumpPointSearch::NODE*>::Iterator nextIter;
 
+	// 기준 노드의 다음 다음 노드입니다.
 	CList<JumpPointSearch::NODE*>::Iterator nextNextIter;
-
 
 	CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
 
@@ -1988,23 +1984,27 @@ void JumpPointSearch::PathOptimizing()
 
 		nextIter = iter.NextIter();
 		
+		//========================================================================
+		// iter의 다음 노드가 마지막 노드라면은 break 로직을 종료한다.
+		//=========================================================================
 		if (nextIter == iterE)
 		{
 			break;
 		}
 
-		endX = nextIter->mX;
-		endY = nextIter->mY;
-
+		
 		nextNextIter = nextIter;
 
 		while (1)
 		{
 			nextNextIter = nextNextIter.NextIter();
 
+
+			//=====================================================================
+			// nextNextIter 노드가 끝 노드라면은 그전 노드를 기준노드에 전달한다.
+			//======================================================================
 			if (nextNextIter == iterE)
 			{
-
 				--nextNextIter;
 
 				iter = nextIter;
@@ -2014,24 +2014,31 @@ void JumpPointSearch::PathOptimizing()
 			nextEndX = nextNextIter->mX;
 			nextEndY = nextNextIter->mY;
 
+			//======================================================================
+			// 라인이 이어진다면은 그전 노드는 삭제할 노드로 체크한다.
+			//======================================================================
 			if (BresenhamLine::MakeLine(startX, startY, nextEndX, nextEndY))
-			{
-				
+			{				
 				(*nextIter)->deleteCheck = true;
 			}
 			else
 			{
+				//=====================================================================================
+				// 장애물에 의해서 이어질 수 없는 노드라면은 nextNextIter의 그전 노드를 기준으로 바꾼다.
+				//=====================================================================================
 				--nextNextIter;
 
-				iter = nextIter;
+				iter = nextNextIter;
 
 				break;
 			}
 		}
+
+
 	}
 
 
-
+	// 삭제 체크한 노드를 삭제합니다.
 	for (iter = optimizeRouteList.begin(); iter != iterE;)
 	{
 		if ((*iter)->deleteCheck)

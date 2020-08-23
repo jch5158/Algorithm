@@ -50,14 +50,18 @@ public:
 		// 연산자 오버로딩
 
 		const Iterator& operator++(int)
-		{
+		{	
 			const Iterator iterator(this->node->next);
+			
+			this->node = this->node->next;
+
 			return iterator;
 		}
 
 		Iterator& operator++()
-		{
+		{	
 			this->node = this->node->next;
+		
 			return *this;
 		}
 
@@ -65,6 +69,9 @@ public:
 		const Iterator& operator--(int)
 		{
 			const Iterator iterator(this->node->prev);
+
+			this->node = this->node->prev;
+				
 			return iterator;
 		}
 
