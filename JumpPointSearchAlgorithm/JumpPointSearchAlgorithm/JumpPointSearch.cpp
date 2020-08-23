@@ -28,15 +28,8 @@ HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
 // 타이머로 자동 함수 호출 시 로직 실행이 되지 않도록 하는 Flag
 //===================================================================
 bool functionFlag = false;
-//
+
 bool funcSetFlag = true;
-
-
-// 목적지 노드
-//JumpPointSearch::NODE* JumpPointSearch::destinationNode = nullptr;
-
-// 시작지 노드
-//JumpPointSearch::NODE* JumpPointSearch::startNode = nullptr;
 
 
 JumpPointSearch::NODE* JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY)
@@ -191,7 +184,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDirection(NODE* node, NODE* destNod
 
 	do
 	{
-		randBrush = CreateSolidBrush(RGB(rand() % 156 + 100, rand() % 156 + 100, rand() % 156 + 100));
+		randBrush = CreateSolidBrush(RGB(rand() % 130 + 126, rand() % 130 + 126, rand() % 130 + 126));
 
 		if (randBrush == grayBrush || randBrush == routeBrush)
 		{
@@ -346,8 +339,6 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 	int subX;
 	int subY;
 
-
-
 	if (FindCloseList(x, y) == false)
 	{
 		// 오픈리스트에 없는 노드라면은 생성
@@ -439,8 +430,6 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 				return newNode;
 			}
 		}
-
-
 	}
 
 	return nullptr;
@@ -451,17 +440,15 @@ JumpPointSearch::NODE* JumpPointSearch::SetCornerNode(NODE* parentNode, NODE* de
 // 오른쪽 직선 탐색 함수입니다.
 //===============================================
 JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush)
-{
-	NODE* newOpenNode = nullptr;
-
+{	
 	NODE* retNode = nullptr;
 
-	//=================================================
-	// 보조 탐색 영억을 생성하는
-	//=================================================
+	//=================================================================================
+	// 오른쪽 위 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (y > 0 && x + 1 < MAX_WIDTH)
 	{
-		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
+		if (brushBlockList[x][y - 1] == grayBrush && (brushBlockList[x + 1][y - 1] == oldBrush || brushBlockList[x + 1][y - 1] == redBrush))
 		{	
 			retNode = CheckRightUp(parentNode, destNode, x, y, randBrush, false);	
 			if (retNode == destNode)
@@ -471,9 +458,12 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 		}
 	}
 
+	//=================================================================================
+	// 오른쪽 아래 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (y + 1 < MAX_HEIGHT && x + 1 < MAX_WIDTH)
 	{
-		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
+		if (brushBlockList[x][y + 1] == grayBrush && (brushBlockList[x + 1][y + 1] == oldBrush || brushBlockList[x + 1][y + 1] == redBrush))
 		{
 			retNode = CheckRightDown(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -496,7 +486,7 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 			return nullptr;
 		}
 
-		// 목적지를 만날 경우 바로 이어준다. 
+		// 목적지를 만날 경우 바로 이어주고 return 한다. 
 		if (iCnt == destNode->mX && y == destNode->mY)
 		{
 			destNode->prev = parentNode;
@@ -504,39 +494,47 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 			return destNode;
 		}
 
-		// 브러쉬 리스트에 칠하기
-		brushBlockList[iCnt][y] = randBrush;
 
-		//===================================================
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[iCnt][y] = randBrush;
+		}
+
+
+		//====================================================================
 		// y 값이 0 이상일 경우에만 위의 벽을 확인할 수 있다.
-		//===================================================
+		//====================================================================
 		if (y > 0 && iCnt + 1 < MAX_WIDTH )
 		{
-			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt + 1][y - 1] == oldBrush)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && (brushBlockList[iCnt + 1][y - 1] == oldBrush || brushBlockList[iCnt + 1][y - 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
-				if(newOpenNode != nullptr)
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+				if(retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}				
-				return newOpenNode;
+				return retNode;
 			}
 		}
 
-		if (y + 1 < MAX_WIDTH && iCnt + 1 < MAX_WIDTH)
+
+		//====================================================================
+		// y 값이 y + 1 < MAX_HEIGHT 일 경우에만 위의 벽을 확인할 수 있다.
+		//====================================================================
+		if (y + 1 < MAX_HEIGHT && iCnt + 1 < MAX_WIDTH)
 		{
-			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt + 1][y + 1] == oldBrush)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && (brushBlockList[iCnt + 1][y + 1] == oldBrush || brushBlockList[iCnt + 1][y + 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
-				if (newOpenNode != nullptr)
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;
+				return retNode;
 			}
 		}
-
 	}
 
 	return nullptr;
@@ -549,13 +547,14 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightHorizontal(NODE* parentNode, N
 //===============================================
 JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush)
 {
-	NODE* newOpenNode = nullptr;
-
 	NODE* retNode = nullptr;
 
+	//=================================================================================
+	// 왼쪽 위 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (y > 0 && x > 0)
 	{
-		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
+		if (brushBlockList[x][y - 1] == grayBrush && (brushBlockList[x - 1][y - 1] == oldBrush || brushBlockList[x - 1][y - 1] == redBrush))
 		{		
 			retNode = CheckLeftUp(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -565,9 +564,12 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 		}
 	}
 
+	//=================================================================================
+	// 왼쪽 아래 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (y + 1 < MAX_HEIGHT && x > 0)
 	{
-		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
+		if (brushBlockList[x][y + 1] == grayBrush && (brushBlockList[x - 1][y + 1] == oldBrush || brushBlockList[x - 1][y + 1] == redBrush))
 		{
 			retNode = CheckLeftDown(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -594,41 +596,42 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 			return destNode;
 		}
 
-		// 타일에 색상을 브러쉬를 넣어준다.
-		brushBlockList[iCnt][y] = randBrush;
-
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[iCnt][y] = randBrush;
+		}
 
 		if (y > 0 && iCnt - 1 >= 0)
 		{
-			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt - 1][y - 1] == oldBrush)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && (brushBlockList[iCnt - 1][y - 1] == oldBrush || brushBlockList[iCnt - 1][y - 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 
-				if (newOpenNode != nullptr)
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;	
+				return retNode;
 			}
 		}
 
 
 		if (y + 1 < MAX_HEIGHT && iCnt - 1 >= 0)
 		{
-			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt - 1][y + 1] == oldBrush)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && (brushBlockList[iCnt - 1][y + 1] == oldBrush || brushBlockList[iCnt - 1][y + 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
-				
-				if (newOpenNode != nullptr)
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;
+				return retNode;
 			}
-		}	
-
+		}
 	}
 
 	return nullptr;
@@ -636,18 +639,18 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, NO
 
 
 //===============================================
-// 수직 직선 탐색 함수입니다.
+// 수직 위 직선 탐색 함수입니다.
 //===============================================
 JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush)
-{
-	NODE* newOpenNode = nullptr;
-
+{	
 	NODE* retNode = nullptr;
 
-
+	//=================================================================================
+	// 왼쪽 위 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (x > 0 && y > 0)
 	{
-		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
+		if (brushBlockList[x - 1][y] == grayBrush && (brushBlockList[x - 1][y - 1] == oldBrush || brushBlockList[x - 1][y - 1] == redBrush))
 		{
 			retNode = CheckLeftUp(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -657,9 +660,12 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 		}
 	}
 
+	//=================================================================================
+	// 오른쪽 위 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (x + 1 < MAX_WIDTH && y > 0)
 	{
-		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
+		if (brushBlockList[x + 1][y] == grayBrush && (brushBlockList[x + 1][y - 1] == oldBrush || brushBlockList[x + 1][y - 1] == redBrush))
 		{ 	
 			retNode = CheckRightUp(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -690,58 +696,62 @@ JumpPointSearch::NODE* JumpPointSearch::CheckUpVertical(NODE* parentNode, NODE* 
 			return destNode;
 		}
 
-		//==========================================
-		// 해당 타일에 브러쉬를 칠한다.
-		//==========================================
-		brushBlockList[x][iCnt] = randBrush;
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[x][iCnt] = randBrush;
+		}
+
 
 		if (x > 0 && iCnt - 1 >= 0)
 		{
-			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt - 1] == oldBrush)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && (brushBlockList[x - 1][iCnt - 1] == oldBrush || brushBlockList[x - 1][iCnt - 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
-				if (newOpenNode != nullptr)
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;
+				return retNode;
 			}
 		}
 
 
 		if (x + 1 < MAX_WIDTH && iCnt - 1 >= 0)
 		{
-			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt - 1] == oldBrush)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && (brushBlockList[x + 1][iCnt - 1] == oldBrush || brushBlockList[x + 1][iCnt - 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
-				if (newOpenNode != nullptr)
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;					
+				return retNode;
 			}
 		}	
-
 	}
+
 	return nullptr;
 }
 
 
-
-
+//===============================================
+// 수직 아래 직선 탐색 함수입니다.
+//===============================================
 JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush)
 {
-	NODE* newOpenNode = nullptr;
-
 	NODE* retNode = nullptr;
 
+	//=================================================================================
+	// 왼쪽 아래 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (x > 0 && y + 1 < MAX_HEIGHT)
 	{
-		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
+		if (brushBlockList[x - 1][y] == grayBrush && (brushBlockList[x - 1][y + 1] == oldBrush || brushBlockList[x - 1][y + 1] == redBrush))
 		{
 			retNode = CheckLeftDown(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -751,9 +761,12 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 		}
 	}
 
+	//=================================================================================
+	// 오른쪽 아래 보조 탐색 영억을 생성하는
+	//=================================================================================
 	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
 	{
-		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
+		if (brushBlockList[x + 1][y] == grayBrush && (brushBlockList[x + 1][y + 1] == oldBrush || brushBlockList[x + 1][y + 1] == redBrush))
 		{
 			retNode = CheckRightDown(parentNode, destNode, x, y, randBrush, false);
 			if (retNode == destNode)
@@ -781,39 +794,41 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 			return destNode;
 		}
 
-		brushBlockList[x][iCnt] = randBrush;
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[x][iCnt] = randBrush;
+		}
 
 		if (x > 0 && iCnt + 1 < MAX_HEIGHT )
 		{
-			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt + 1] == oldBrush)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && (brushBlockList[x - 1][iCnt + 1] == oldBrush || brushBlockList[x - 1][iCnt + 1] == redBrush))
 			{
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
-				if (newOpenNode != nullptr)
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;
+				return retNode;
 			}
 		}
 
 		if (x + 1 < MAX_WIDTH && iCnt + 1 < MAX_HEIGHT)
 		{
-			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt + 1] == oldBrush)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && (brushBlockList[x + 1][iCnt + 1] == oldBrush || brushBlockList[x + 1][iCnt + 1] == redBrush))
 			{
+				retNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
-				newOpenNode = SetCornerNode(parentNode, destNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
-
-				if (newOpenNode != nullptr)
+				if (retNode != nullptr)
 				{
-					openList.PushBack(newOpenNode);
+					openList.PushBack(retNode);
 				}
 
-				return newOpenNode;
+				return retNode;
 			}
 		}		
-
 	}
 
 	return nullptr;
@@ -827,22 +842,15 @@ JumpPointSearch::NODE* JumpPointSearch::CheckDownVertical(NODE* parentNode, NODE
 //======================================================
 JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {	
-	bool retOpenNode;
-
-	bool rightUpFlag = true;
-
-	bool leftUpFlag = false;
-	bool rightDownFlag = false;
-	
-	int xCount = 0;
-	int yCount = 0;
-
+	bool retOpenNodeFlag = false;
 
 	//===============================================
 	// 대각선 함수 호출 시 직선 함수 호출 여부
 	//===============================================
 	if (firstCall)
 	{	
+		//===================================================================
+		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
 		if (destNode == CheckRightHorizontal(parentNode, destNode, x, y, randBrush))
 		{
 			return destNode;
@@ -852,151 +860,45 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 		{
 			return destNode;
 		}
+		//===================================================================
 	}
-
-	//==================================================
-	// 보조 왼쪽 위 대각선 호출 조건
-	//==================================================
-	if (x > 0 && y > 0 )
-	{
-		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
-		{
-			leftUpFlag = true;
-		}
-	}
-
-	//==================================================
-	// 보조 오른쪽 아래 대각선 호출 조건
-	//==================================================
-	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
-	{
-		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
-		{
-			rightDownFlag = true;
-		}
-	}
-
 
 	while (1)
 	{
-		xCount += 1;
+		x += 1;
 
-		yCount += 1;
+		y -= 1;
 
 
-		// 오른쪽 위 대각선 호출
-		if (rightUpFlag)
+		// 배열 범위를 벗어날 경우 호출 안함 
+		if (x >= MAX_WIDTH || y < 0)
 		{
-			do
-			{
-				// 배열 범위를 벗어날 경우 호출 안함 
-				if (x + xCount >= MAX_WIDTH || y - yCount < 0)
-				{
-					rightUpFlag = false;
-					break;
-				}
+			break;
+		}
 
-				// 장애물을 만났을 경우 호출 안함
-				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				//
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-			} while (0);
+		// 장애물을 만났을 경우 호출 안함
+		if (brushBlockList[x][y] == grayBrush)
+		{
+			break;
 		}
 
 
-		if (leftUpFlag)
-		{
-			do
-			{
-				if (x - xCount < 0 || y - yCount < 0)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-
-			} while (0);
-		}
-
-		if (rightDownFlag)
-		{
-			do
-			{
-				if (x + xCount >= MAX_WIDTH || y + yCount >= MAX_HEIGHT)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-			} while (0);
-		}
-
-		if (destNode->mX == x + xCount && destNode->mY == y - yCount)
+		// 목적지를 만났으면 목적지에서 이어주고 return 한다.
+		if (destNode->mX == x && destNode->mY == y)
 		{
 			destNode->prev = parentNode;
 
 			return destNode;
 		}
-		
-		if (rightUpFlag == false && rightDownFlag == false && leftUpFlag == false)
+
+		retOpenNodeFlag = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
+		if (retOpenNodeFlag)
+		{
+			break;
+		}
+
+		retOpenNodeFlag = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
+		if (retOpenNodeFlag)
 		{
 			break;
 		}
@@ -1005,21 +907,19 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightUp(NODE* parentNode, NODE* des
 	return nullptr;
 }
 
+
+//======================================================
+// 오른쪽 아래 대각선 함수입니다. 
+//======================================================
 JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall)
 {
-	bool retOpenNode;
-
-	bool rightDownFlag = true;
-
-	bool rightUpFlag = false;
-	bool leftDownFlag = false;
 	
-	int xCount = 0;
-	int yCount = 0;
-
+	bool retOpenNodeFlag = false;
+	
 	if (firstCall)
 	{
-
+		//===================================================================
+		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
 		if (destNode == CheckRightHorizontal(parentNode, destNode, x, y, randBrush))
 		{
 			return destNode;
@@ -1029,162 +929,60 @@ JumpPointSearch::NODE* JumpPointSearch::CheckRightDown(NODE* parentNode, NODE* d
 		{
 			return destNode;
 		}
+		//===================================================================
 	}
-
-	if (x + 1 < MAX_WIDTH && y > 0)
-	{
-		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
-		{	
-			rightUpFlag = true;
-		}
-	}
-
-	if (x > 0 && y + 1 < MAX_HEIGHT)
-	{
-		if (brushBlockList[x - 1][y] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
-		{
-			leftDownFlag = true;
-		}
-	}
-
-
 
 	while (1)
 	{
-		xCount += 1;
+		x += 1;
 
-		yCount += 1;
+		y += 1;
 
-
-		if (rightDownFlag)
+		if (x >= MAX_WIDTH || y >= MAX_HEIGHT)
 		{
-			do
-			{
-				if ( x + xCount >= MAX_WIDTH || y + yCount >= MAX_HEIGHT)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-			} while (0);
+			break;
 		}
 
-		if (rightUpFlag)
+		if (brushBlockList[x][y] == grayBrush)
 		{
-			do
-			{
-				if (x + xCount >= MAX_WIDTH || y - yCount < 0)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}	
-
-			} while (0);
+			break;
 		}
 
-		if (leftDownFlag)
-		{
-			do
-			{
-				if (x - xCount < 0 || y + yCount >= MAX_HEIGHT)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x - xCount][y + yCount] == grayBrush)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if(retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-			} while (0);
-		}
-
-		if (destNode->mX == x + xCount && destNode->mY == y + yCount)
+		if (destNode->mX == x && destNode->mY == y)
 		{
 			destNode->prev = parentNode;
 
 			return destNode;
 		}
 
-		if (rightDownFlag == false && rightUpFlag == false && leftDownFlag == false)
+		retOpenNodeFlag = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
+		if (retOpenNodeFlag)
 		{
 			break;
 		}
 
+		retOpenNodeFlag = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
+		if (retOpenNodeFlag)
+		{
+			break;
+		}
 	}
+
+	return nullptr;
 }
 
+
+//======================================================
+// 왼쪽 위 대각선 함수입니다. 
+//======================================================
 JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {
-	bool retOpenNode;
-	
-	bool leftUpFlag = true;
-
-	bool leftDownFlag = false;
-	bool rightUpFlag = false;
-
-	int xCount = 0;
-	int yCount = 0;
-
+	bool retOpenNodeFlag = false;
+		
 	if (firstCall)
 	{
-
-
+		//===================================================================
+		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
 		if (destNode == CheckLeftHorizontal(parentNode, destNode, x, y, randBrush))
 		{
 			return destNode;
@@ -1194,161 +992,59 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftUp(NODE* parentNode, NODE* dest
 		{
 			return destNode;
 		}
+		//===================================================================
 	}
-
-	if (x + 1 < MAX_WIDTH && y > 0)
-	{
-		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y - 1] == oldBrush)
-		{
-			rightUpFlag = true;
-		}
-	}
-
-	if (x > 0 && y + 1 < MAX_HEIGHT)
-	{
-		if (brushBlockList[x][y + 1] == grayBrush && brushBlockList[x - 1][y + 1] == oldBrush)
-		{
-			leftDownFlag = true;
-		}
-	}
-
-
 
 	while (1)
 	{
-		xCount += 1;
-		yCount += 1;
+		x -= 1;
+		y -= 1;
 
-		if (leftUpFlag)
+
+		if (x < 0 || y < 0)
 		{
-			do
-			{
-				if (x - xCount < 0 || y - yCount < 0)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x -xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-			} while (0);
+			break;
 		}
 
-		if (rightUpFlag)
+		if (brushBlockList[x][y] == grayBrush)
 		{
-			do
-			{
-				if (x + xCount >= MAX_WIDTH || y - yCount < 0)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x + xCount][y - yCount] == grayBrush)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RU, x + xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightUpFlag = false;
-					break;
-				}
-
-			} while (0);
+			break;
 		}
 
-
-		if (leftDownFlag)
-		{
-			do
-			{
-				if (x - xCount < 0 || y + yCount >= MAX_HEIGHT)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x - xCount][y + yCount] == grayBrush)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if(retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-			} while (0);
-		}
-
-		if (destNode->mX == x - xCount && destNode->mY == y - yCount)
+		if (destNode->mX == x && destNode->mY == y)
 		{
 			destNode->prev = parentNode;
 
 			return destNode;
 		}
 
-		if (leftUpFlag == false && rightUpFlag == false && leftDownFlag == false)
+		retOpenNodeFlag = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
+		if (retOpenNodeFlag)
+		{
+			break;
+		}
+
+		retOpenNodeFlag = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
+		if (retOpenNodeFlag)
 		{
 			break;
 		}
 	}
-
+	return nullptr;
 }
 
+
+//======================================================
+// 왼쪽 아래 대각선 함수입니다. 
+//======================================================
 JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall)
 {
-	bool retOpenNode;
-
-	bool leftDownFlag = true;
-
-	bool leftUpFlag = false;
-	bool rightDownFlag = false;
-
-	int xCount = 0;
-	int yCount = 0;
-
+	bool retOpenNodeFlag = false;
+	
 	if (firstCall == true)
 	{
-
-
+		//===================================================================
+		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
 		if (destNode == CheckLeftHorizontal(parentNode, destNode, x, y, randBrush))
 		{
 			return destNode;
@@ -1358,150 +1054,56 @@ JumpPointSearch::NODE* JumpPointSearch::CheckLeftDown(NODE* parentNode, NODE* de
 		{
 			return destNode;
 		}
+		//===================================================================
 	}
 
-	if (x > 0 && y > 0)
-	{
-		if (brushBlockList[x][y - 1] == grayBrush && brushBlockList[x - 1][y - 1] == oldBrush)
-		{
-			leftUpFlag = true;
-		}
-	}
-
-	if (x + 1 < MAX_WIDTH && y + 1 < MAX_HEIGHT)
-	{
-		if (brushBlockList[x + 1][y] == grayBrush && brushBlockList[x + 1][y + 1] == oldBrush)
-		{
-			rightDownFlag = true;
-		}
-	}
 
 	while (1)
 	{
-		xCount += 1;
-		yCount += 1;
+		x -= 1;
+		y += 1;
 
-		if (leftDownFlag)
+		if (x < 0 || y >= MAX_HEIGHT)
 		{
-			do
-			{
-				if (x - xCount < 0 || y + yCount >= MAX_HEIGHT)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x- xCount][y + yCount] == grayBrush)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x - xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftDownFlag = false;
-					break;
-				}
-
-			} while (0);
+			break;
 		}
 
-		if (leftUpFlag)
+		if (brushBlockList[x][y] == grayBrush)
 		{
-			do
-			{
-				if (x - xCount < 0 || y - yCount < 0)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x - xCount][y - yCount] == grayBrush)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckUpDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LU, x - xCount, y - yCount, randBrush);
-				if (retOpenNode)
-				{
-					leftUpFlag = false;
-					break;
-				}
-
-			} while (0);
+			break;
 		}
 
-		if (rightDownFlag)
-		{
-			do
-			{
-				if (x + xCount >= MAX_WIDTH || y + yCount >= MAX_HEIGHT)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				if (brushBlockList[x + xCount][y + yCount] == grayBrush)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckRightDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-				retOpenNode = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_RD, x + xCount, y + yCount, randBrush);
-				if (retOpenNode)
-				{
-					rightDownFlag = false;
-					break;
-				}
-
-			} while (0);
-		}
-
-		if (destNode->mX == x - xCount && destNode->mY == y + yCount)
+		if (destNode->mX == x && destNode->mY == y)
 		{
 			destNode->prev = parentNode;
 
 			return destNode;
 		}
 
-		if (leftDownFlag == false && leftUpFlag == false && rightDownFlag == false)
+		retOpenNodeFlag = CheckLeftDiagonalHorizontal(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
+		if (retOpenNodeFlag)
 		{
 			break;
 		}
-		
+
+		retOpenNodeFlag = CheckDownDiagonalVertical(parentNode, destNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
+		if (retOpenNodeFlag)
+		{
+			break;
+		}
 	}
 }
 
 
+
+
+
+
 //=======================================================
-// 대각선 함수 수평 오른쪽 방향 
+// 대각선 함수의 수평 오른쪽 방향 
 //=======================================================
 bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush)
 {
-
 	NODE* newOpenNode;
 
 	for (int iCnt = x; iCnt < MAX_WIDTH; ++iCnt)
@@ -1524,11 +1126,15 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 			return true;
 		}
 
-		brushBlockList[iCnt][y] = randBrush;
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[iCnt][y] = randBrush;
+		}
 
 		if (y > 0 && iCnt + 1 < MAX_WIDTH)
 		{
-			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt + 1][y - 1] == oldBrush)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && (brushBlockList[iCnt + 1][y - 1] == oldBrush || brushBlockList[iCnt + 1][y - 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1543,7 +1149,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 
 		if(y + 1 < MAX_HEIGHT && iCnt + 1 < MAX_WIDTH)
 		{
-			if (brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt + 1][y + 1] == oldBrush)
+			if (brushBlockList[iCnt][y + 1] == grayBrush && (brushBlockList[iCnt + 1][y + 1] == oldBrush || brushBlockList[iCnt + 1][y + 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1562,9 +1168,8 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destN
 }
 
 
-
 //=======================================================
-// 대각선 함수 수평 왼쪽 방향
+// 대각선 함수의 수평 왼쪽 방향
 //=======================================================
 bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
@@ -1593,13 +1198,16 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 			return true;
 		}
 
-		brushBlockList[iCnt][y] = randBrush;
-
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[iCnt][y] = randBrush;
+		}
 
 		
 		if (y > 0 && iCnt > 0)
 		{
-			if (brushBlockList[iCnt][y - 1] == grayBrush && brushBlockList[iCnt - 1][y - 1] == oldBrush)
+			if (brushBlockList[iCnt][y - 1] == grayBrush && (brushBlockList[iCnt - 1][y - 1] == oldBrush || brushBlockList[iCnt - 1][y - 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1614,7 +1222,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 
 		if (y + 1 < MAX_HEIGHT && iCnt > 0)
 		{
-			if(brushBlockList[iCnt][y + 1] == grayBrush && brushBlockList[iCnt - 1][y + 1] == oldBrush)
+			if(brushBlockList[iCnt][y + 1] == grayBrush && (brushBlockList[iCnt - 1][y + 1] == oldBrush || brushBlockList[iCnt - 1][y + 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1635,7 +1243,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNo
 
 
 //=======================================================
-// 대각선 수직 위 방향
+// 대각선 함수의 수직 위 방향
 //=======================================================
 bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
@@ -1664,16 +1272,18 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 			return true;
 		}
 
-		brushBlockList[x][iCnt] = randBrush;
 
-
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[x][iCnt] = randBrush;
+		}
 
 		if (x > 0 && iCnt > 0)
 		{
-			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt - 1] == oldBrush)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && (brushBlockList[x - 1][iCnt - 1] == oldBrush || brushBlockList[x - 1][iCnt - 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
-
 				if (newOpenNode != nullptr)
 				{
 					openList.PushBack(newOpenNode);
@@ -1685,8 +1295,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 
 		if (x + 1 < MAX_WIDTH && iCnt > 0)
 		{
-
-			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt - 1] == oldBrush)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && (brushBlockList[x + 1][iCnt - 1] == oldBrush || brushBlockList[x + 1][iCnt - 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1704,6 +1313,9 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, 
 }
 
 
+//=======================================================
+// 대각선 함수의 수직 아래 방향
+//=======================================================
 bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 
@@ -1728,11 +1340,15 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 			return true;
 		}
 
-		brushBlockList[x][iCnt] = randBrush;
+		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
+		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		{
+			brushBlockList[x][iCnt] = randBrush;
+		}
 
 		if (x > 0 && iCnt + 1 < MAX_HEIGHT)
 		{
-			if (brushBlockList[x - 1][iCnt] == grayBrush && brushBlockList[x - 1][iCnt + 1] == oldBrush)
+			if (brushBlockList[x - 1][iCnt] == grayBrush && (brushBlockList[x - 1][iCnt + 1] == oldBrush || brushBlockList[x - 1][iCnt + 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1748,7 +1364,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 		if (x + 1 < MAX_WIDTH && iCnt + 1 < MAX_HEIGHT)
 		{
 
-			if (brushBlockList[x + 1][iCnt] == grayBrush && brushBlockList[x + 1][iCnt + 1] == oldBrush)
+			if (brushBlockList[x + 1][iCnt] == grayBrush && (brushBlockList[x + 1][iCnt + 1] == oldBrush || brushBlockList[x + 1][iCnt + 1] == redBrush))
 			{
 				newOpenNode = SetCornerNode(parentNode, destNode, nodeDir, x, y);
 
@@ -1764,6 +1380,8 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode
 
 	return false;
 }
+
+
 
 
 //================================================================
@@ -1823,6 +1441,10 @@ void JumpPointSearch::ResetAll()
 }
 
 
+
+//==================================================================
+// 시작점과 도착점을 제외한 리스트와 블럭을 초기화하고 다시 길을 찾는다.
+//==================================================================
 void JumpPointSearch::ReStart()
 {
 	if (funcSetFlag == false)
@@ -1877,6 +1499,10 @@ void JumpPointSearch::ResetCloseList()
 }
 
 
+
+//=============================================================
+// 시작점에서 목적지까지의 List를 reset한다.
+//=============================================================
 void JumpPointSearch::ResetRouteList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = routeList.end();
@@ -1888,6 +1514,9 @@ void JumpPointSearch::ResetRouteList()
 }
 
 
+//=============================================================
+// 자연스러운 시작점에서 목적지까지의 경로를 reset한다.
+//=============================================================
 void JumpPointSearch::OptimizeRouteReset()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
@@ -1917,13 +1546,15 @@ void JumpPointSearch::ResetBlock()
 
 
 
+//=====================================================================
+// 시작점과 목적지 장애물을 제외하고 블럭 색깔을 리셋한다.
+//======================================================================
 void JumpPointSearch::RouteReset()
 {
 	for (int iCntY = 0; iCntY < MAX_HEIGHT; iCntY++)
 	{
 		for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
 		{
-
 			if (brushBlockList[iCntX][iCntY] != redBrush && brushBlockList[iCntX][iCntY] != greenBrush && brushBlockList[iCntX][iCntY] != grayBrush)
 			{
 				brushBlockList[iCntX][iCntY] = oldBrush;
@@ -1932,7 +1563,9 @@ void JumpPointSearch::RouteReset()
 	}
 }
 
-
+//==================================================================
+// 정방향으로 목적지까지의 경로를 넣는다.
+//==================================================================
 void JumpPointSearch::InsertRoute(NODE* node)
 {
 
@@ -1949,7 +1582,6 @@ void JumpPointSearch::InsertRoute(NODE* node)
 
 		node = node->prev;
 	}
-
 }
 
 //====================================================

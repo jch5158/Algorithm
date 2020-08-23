@@ -58,10 +58,11 @@ namespace JumpPointSearch
 
     NODE* SelectOpenListNode();
 
-
     NODE* CheckDirection(NODE* node,NODE* destNode , int x, int y);
 
 
+    //===================================================================================================
+    // 직선 방향을 탐색하는 함수입니다.
     NODE* CheckUpVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
     NODE* CheckDownVertical(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
@@ -69,9 +70,11 @@ namespace JumpPointSearch
     NODE* CheckRightHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
 
     NODE* CheckLeftHorizontal(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush);
+    //==================================================================================================
 
 
-    // 5방향을 체크한다.
+    //==================================================================================================================
+    // 대각선 방향을 탐색하는 함수입니다.
     NODE* CheckRightUp(NODE* parentNode, NODE* destNode ,int x, int y, HBRUSH randBrush ,bool firstCall = true);
 
     NODE* CheckRightDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
@@ -79,9 +82,12 @@ namespace JumpPointSearch
     NODE* CheckLeftUp(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
 
     NODE* CheckLeftDown(NODE* parentNode, NODE* destNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
+    //===================================================================================================================
 
 
 
+    //===============================================================================================================================
+    // 대각선의 직선 탐색 함수입니다.
     bool CheckRightDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush);
 
     bool CheckLeftDiagonalHorizontal(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
@@ -89,10 +95,11 @@ namespace JumpPointSearch
     bool CheckUpDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
 
     bool CheckDownDiagonalVertical(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
+    //===============================================================================================================================
+
 
 
     NODE* SetCornerNode(NODE* parentNode, NODE* destNode, NODE_DIRECTION nodeDir ,int x, int y);
-
 
     void InsertRoute(NODE* node);
 
