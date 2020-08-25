@@ -52,11 +52,13 @@ int                greenY;
 
 bool               returnFlag = false;
 
+bool               pathFineFlag = true;
+
 JumpPointSearch    jspObject(MAX_WIDTH, MAX_HEIGHT);
 
 
 RouteNode          routeNodeArray[100];
-
+RouteNode          optimizeNodeArray[100];
 
 
 extern CList<JumpPointSearch::NODE*> routeList;
@@ -259,8 +261,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == VK_RETURN)
         {            
-            jspObject.ReStart(routeNodeArray, 100);
+            pathFineFlag = true;
 
+            jspObject.ReStart(routeNodeArray, 100, optimizeNodeArray, 100);
 
             for (int iCntY = 0; iCntY < MAX_HEIGHT; ++iCntY)
             {
@@ -277,7 +280,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == VK_SPACE)
         {
-            jspObject.ResetAll(routeNodeArray, 100);
+            pathFineFlag = true;
+
+            jspObject.ResetAll(routeNodeArray, 100, optimizeNodeArray, 100);
         }
 
         InvalidateRect(hWnd, nullptr, false);
@@ -374,6 +379,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PAINTSTRUCT ps;
         hdc = BeginPaint(hWnd, &ps);
 
+        oldPen = (HPEN)SelectObject(hdc, redPen);
+
+        for (int index = 0; index < 99; ++index)
+        {
+            if (!optimizeNodeArray[index].mRouteFlag)
+            {
+                break;
+            }              
+            
+
+            if (optimizeNodeArray[index + 1].mRouteFlag)
+            {
+
+                BresenhamLine::CatchLine(optimizeNodeArray[index].mPosX, optimizeNodeArray[index].mPosY, optimizeNodeArray[index+1].mPosX, optimizeNodeArray[index + 1].mPosY);
+            }
+            else
+            {
+                break;
+            }
+        }
+
         SelectObject(hdc, oldPen);
         
         for (int iCntY = 0; iCntY < MAX_HEIGHT; iCntY++)
@@ -400,15 +426,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             else
             {
                 break;
-            }              
-            
+            }
+
 
             if (routeNodeArray[index + 1].mRouteFlag)
             {
-
-                BresenhamLine::CatchLine(routeNodeArray[index].mPosX, routeNodeArray[index].mPosY, routeNodeArray[index+1].mPosX, routeNodeArray[index + 1].mPosY);
-                
-
                 LineTo(hdc, 10 + (routeNodeArray[index + 1].mPosX * PERMETER_OF_SQUARE), 10 + (routeNodeArray[index + 1].mPosY * PERMETER_OF_SQUARE));
             }
             else
@@ -417,11 +439,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
 
-        SelectObject(hdc, oldPen);
-        
+        oldPen = (HPEN)SelectObject(hdc, pinkPen);
 
-        if (returnFlag)
+        for (int index = 0; index < 99; ++index)
         {
+            if (optimizeNodeArray[index].mRouteFlag)
+            {
+                MoveToEx(hdc, 10 + (optimizeNodeArray[index].mPosX * PERMETER_OF_SQUARE), 10 + (optimizeNodeArray[index].mPosY * PERMETER_OF_SQUARE), nullptr);
+            }
+            else
+            {
+                break;
+            }
+
+
+            if (optimizeNodeArray[index + 1].mRouteFlag)
+            {
+                LineTo(hdc, 10 + (optimizeNodeArray[index + 1].mPosX * PERMETER_OF_SQUARE), 10 + (optimizeNodeArray[index + 1].mPosY * PERMETER_OF_SQUARE));
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        SelectObject(hdc, oldPen);
+
+
             /*
             
             int routeX;
@@ -492,7 +536,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             //}
 
             //SelectObject(hdc, oldPen);
-        }
+        
 
 
 
@@ -520,13 +564,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
-
-   returnFlag = jspObject.PathFind(greenX, greenY, redX, redY, routeNodeArray,100);
-   if (returnFlag)
-   {
-       InvalidateRect(hWnd, nullptr, false);
-   }
-
+    if (pathFineFlag)
+    {
+        returnFlag = jspObject.PathFind(greenX, greenY, redX, redY, routeNodeArray, 100, optimizeNodeArray, 100);
+        InvalidateRect(hWnd, nullptr, false);
+        if (returnFlag)
+        {
+            pathFineFlag = false;
+        }
+    }
 }
 
 // 정보 대화 상자의 메시지 처리기입니다.

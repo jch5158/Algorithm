@@ -58,7 +58,7 @@ void JumpPointSearch::SettingMapAttrivute(int posX, int posY)
 
 
 
-bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY, RouteNode *routeNodeArray, int routeNodeArraySize)
+bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int destinationY, RouteNode *routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize)
 {
 	
 	// 현재 노드
@@ -108,21 +108,23 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 
 
 
-	curNode = SelectOpenListNode();
+	curNode = selectOpenListNode();
 	if (curNode->mX == mDestinationNode->mX && curNode->mY == mDestinationNode->mY)
 	{
-		InsertRoute(curNode);
+		insertRoute(curNode);
 
-		PathOptimizing();
+		pathOptimizing();
 
 		settingRouteArray(routeNodeArray, routeNodeArraySize);
+
+		settingOptimizeArray(optimizeNodeArray, optimizeNodeArraySize);
 
 		functionFlag = false;
 
 		return true;
 	}
 	
-	InsertOpenNode(curNode);
+	insertOpenNode(curNode);
 
 	// openList F값 정렬
 	openListBubbleSort();
@@ -133,7 +135,7 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 //======================================================
 // 좌표로 openList를 찾아서 return 
 //======================================================
-JumpPointSearch::NODE* JumpPointSearch::FindOpenList(int openX, int openY)
+JumpPointSearch::NODE* JumpPointSearch::findOpenList(int openX, int openY)
 {
 
 	CList<NODE*>::Iterator iterE = mOpenList.end();
@@ -152,7 +154,7 @@ JumpPointSearch::NODE* JumpPointSearch::FindOpenList(int openX, int openY)
 //======================================================
 // 해당 좌표에 closeList가 있다면은 true를 리턴한다.
 //======================================================
-bool JumpPointSearch::FindCloseList(int closeX, int closeY)
+bool JumpPointSearch::findCloseList(int closeX, int closeY)
 {
 	CList<NODE*>::Iterator iterE = mCloseList.end();
 
@@ -168,7 +170,7 @@ bool JumpPointSearch::FindCloseList(int closeX, int closeY)
 }
 
 
-void JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* node)
+void JumpPointSearch::insertOpenNode(JumpPointSearch::NODE* node)
 {
 	if (node == nullptr)
 	{
@@ -181,13 +183,13 @@ void JumpPointSearch::InsertOpenNode(JumpPointSearch::NODE* node)
 	int newNodePosX = 0;
 	int newNodePosY = 0;
 
-	CheckDirection(node, posX, posY);
+	checkDirection(node, posX, posY);
 
 	return;
 }
 
 
-void JumpPointSearch::CheckDirection(NODE* node, int x, int y)
+void JumpPointSearch::checkDirection(NODE* node, int x, int y)
 {
 	NODE* retNode;
 	
@@ -209,61 +211,61 @@ void JumpPointSearch::CheckDirection(NODE* node, int x, int y)
 	{
 	case NODE_DIRECTION::NODE_DIR_RR:
 
-		CheckRightHorizontal(node, x, y, randBrush);	
+		checkRightHorizontal(node, x, y, randBrush);	
 
 		break;
 	case NODE_DIRECTION::NODE_DIR_RD:
 
-		CheckRightDown(node, x, y, randBrush);
+		checkRightDown(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_DD:
 		
-		CheckDownVertical(node, x, y, randBrush);
+		checkDownVertical(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_LD:
 
-		CheckLeftDown(node, x, y, randBrush);
+		checkLeftDown(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_LL:
 	
-		CheckLeftHorizontal(node, x, y, randBrush);
+		checkLeftHorizontal(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_LU:
 
-		CheckLeftUp(node, x, y, randBrush);
+		checkLeftUp(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_UU:
 		
-		CheckUpVertical(node, x, y, randBrush);
+		checkUpVertical(node, x, y, randBrush);
 		
 		break;
 	case NODE_DIRECTION::NODE_DIR_RU:
 
-		CheckRightUp(node, x, y,randBrush);	
+		checkRightUp(node, x, y,randBrush);	
 
 		break;
 	case NODE_DIRECTION::NODE_DIR_ALL:
 
-		CheckRightUp(node, x, y, randBrush, false);
+		checkRightUp(node, x, y, randBrush, false);
 	
-		CheckRightHorizontal(node, x, y, randBrush);
+		checkRightHorizontal(node, x, y, randBrush);
 		
-		CheckRightDown(node, x, y, randBrush ,false);
+		checkRightDown(node, x, y, randBrush ,false);
 		
-		CheckDownVertical(node, x, y, randBrush);
+		checkDownVertical(node, x, y, randBrush);
 		
-		CheckLeftDown(node, x, y, randBrush ,false);
+		checkLeftDown(node, x, y, randBrush ,false);
 		
-		CheckLeftHorizontal(node, x, y, randBrush);
+		checkLeftHorizontal(node, x, y, randBrush);
 		
-		CheckLeftUp(node, x, y, randBrush, false);
+		checkLeftUp(node, x, y, randBrush, false);
 		
-		CheckUpVertical(node, x, y, randBrush);
+		checkUpVertical(node, x, y, randBrush);
 		
 		break;
 
@@ -275,7 +277,7 @@ void JumpPointSearch::CheckDirection(NODE* node, int x, int y)
 }
 
 
-void JumpPointSearch::SetCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, int x, int y)
+void JumpPointSearch::setCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, int x, int y)
 {
 	NODE* newNode = nullptr;
 
@@ -284,10 +286,10 @@ void JumpPointSearch::SetCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 	int subX;
 	int subY;
 
-	if (FindCloseList(x, y) == false)
+	if (findCloseList(x, y) == false)
 	{
 		// 오픈리스트에 없는 노드라면은 생성
-		retOpenNode = FindOpenList(x, y);
+		retOpenNode = findOpenList(x, y);
 		if (retOpenNode == nullptr)
 		{
 			newNode = (NODE*)malloc(sizeof(NODE));
@@ -384,7 +386,7 @@ void JumpPointSearch::SetCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 //===============================================
 // 오른쪽 직선 탐색 함수입니다.
 //===============================================
-void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
+void JumpPointSearch::checkRightHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {	
 	
 	//=================================================================================
@@ -394,7 +396,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 	{
 		if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 		{	
-			CheckRightUp(parentNode, x, y, randBrush, false);				
+			checkRightUp(parentNode, x, y, randBrush, false);				
 		}
 	}
 
@@ -405,7 +407,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 	{
 		if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
 		{
-			CheckRightDown(parentNode, x, y, randBrush, false);	
+			checkRightDown(parentNode, x, y, randBrush, false);	
 		}
 	}
 	
@@ -425,7 +427,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 		// 목적지를 만날 경우 바로 이어주고 return 한다. 
 		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
 
 			return;
 		}
@@ -445,7 +447,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 		{
 			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
 				
 				return;
 			}
@@ -459,7 +461,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 		{
 			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
 			
 				return;
 			}
@@ -473,7 +475,7 @@ void JumpPointSearch::CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 //===============================================
 // 왼쪽 직선 탐색 함수입니다.
 //===============================================
-void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
+void JumpPointSearch::checkLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {
 
 	//=================================================================================
@@ -483,7 +485,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 	{
 		if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 		{		
-			CheckLeftUp(parentNode, x, y, randBrush, false);			
+			checkLeftUp(parentNode, x, y, randBrush, false);			
 		}
 	}
 
@@ -494,7 +496,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 	{
 		if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
 		{
-			CheckLeftDown(parentNode, x, y, randBrush, false);		
+			checkLeftDown(parentNode, x, y, randBrush, false);		
 		}
 	}
 
@@ -510,7 +512,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 		// 목적지를 만나면 이어주고 바로 return 한다.
 		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 
 			return;
 		}
@@ -525,7 +527,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 		{
 			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 
 				return;
 			}
@@ -536,7 +538,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 		{
 			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
 
 				return;
 			}
@@ -550,7 +552,7 @@ void JumpPointSearch::CheckLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 //===============================================
 // 수직 위 직선 탐색 함수입니다.
 //===============================================
-void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
+void JumpPointSearch::checkUpVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {	
 	
 	//=================================================================================
@@ -560,7 +562,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 	{
 		if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 		{
-			CheckLeftUp(parentNode, x, y, randBrush, false);	
+			checkLeftUp(parentNode, x, y, randBrush, false);	
 		}
 	}
 
@@ -571,7 +573,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 	{
 		if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 		{ 	
-			CheckRightUp(parentNode, x, y, randBrush, false);	
+			checkRightUp(parentNode, x, y, randBrush, false);	
 		}
 	}
 
@@ -591,7 +593,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 		//===================================================
 		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
 			return;
 		}
@@ -607,7 +609,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 		{
 			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
 				return;
 			}
@@ -618,7 +620,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 		{
 			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
 
 				return;
 			}
@@ -632,7 +634,7 @@ void JumpPointSearch::CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 //===============================================
 // 수직 아래 직선 탐색 함수입니다.
 //===============================================
-void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
+void JumpPointSearch::checkDownVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {
 
 	//=================================================================================
@@ -642,7 +644,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 	{
 		if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
 		{
-			CheckLeftDown(parentNode, x, y, randBrush, false);
+			checkLeftDown(parentNode, x, y, randBrush, false);
 			
 		}
 	}
@@ -654,7 +656,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 	{
 		if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 		{
-			CheckRightDown(parentNode, x, y, randBrush, false);
+			checkRightDown(parentNode, x, y, randBrush, false);
 			
 		}
 	}
@@ -672,7 +674,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 		// 목적지를 만났을 경우 목적지를 이어주고 return 한다.
 		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
 			return;
 		}
@@ -687,7 +689,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 		{
 			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
 				return;
 			}
@@ -697,7 +699,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 		{
 			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
 
 				return;
 			}
@@ -712,7 +714,7 @@ void JumpPointSearch::CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 //======================================================
 // 오른쪽 위 대각선 함수입니다. 
 //======================================================
-void JumpPointSearch::CheckRightUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
+void JumpPointSearch::checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {		
 	bool setOpenNodeFlag;
 
@@ -723,9 +725,9 @@ void JumpPointSearch::CheckRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 	{	
 		//===================================================================
 		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
-		CheckRightHorizontal(parentNode, x, y, randBrush);
+		checkRightHorizontal(parentNode, x, y, randBrush);
 
-		CheckUpVertical(parentNode, x, y, randBrush);		
+		checkUpVertical(parentNode, x, y, randBrush);		
 		//===================================================================
 	}
 
@@ -751,19 +753,19 @@ void JumpPointSearch::CheckRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 		// 목적지를 만났으면 목적지에서 이어주고 return 한다.
 		if (mDestinationNode->mX == x && mDestinationNode->mY == y)
 		{			
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y);
 
 			return;
 		}
 
-		setOpenNodeFlag = CheckRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
+		setOpenNodeFlag = checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
 		}
 
 
-		setOpenNodeFlag = CheckUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
+		setOpenNodeFlag = checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
@@ -777,7 +779,7 @@ void JumpPointSearch::CheckRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 //======================================================
 // 오른쪽 아래 대각선 함수입니다. 
 //======================================================
-void JumpPointSearch::CheckRightDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
+void JumpPointSearch::checkRightDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
 {	
 	bool setOpenNodeFlag;
 
@@ -785,9 +787,9 @@ void JumpPointSearch::CheckRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 	{
 		//===================================================================
 		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
-		CheckRightHorizontal(parentNode, x, y, randBrush);
+		checkRightHorizontal(parentNode, x, y, randBrush);
 		
-		CheckDownVertical(parentNode, x, y, randBrush);	
+		checkDownVertical(parentNode, x, y, randBrush);	
 		//===================================================================
 	}
 
@@ -809,18 +811,18 @@ void JumpPointSearch::CheckRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 
 		if (mDestinationNode->mX == x && mDestinationNode->mY == y)
 		{			
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y);
 
 			return;
 		}
 
-		setOpenNodeFlag = CheckRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
+		setOpenNodeFlag = checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
 		}
 
-		setOpenNodeFlag	= CheckDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
+		setOpenNodeFlag	= checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
@@ -834,7 +836,7 @@ void JumpPointSearch::CheckRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 //======================================================
 // 왼쪽 위 대각선 함수입니다. 
 //======================================================
-void JumpPointSearch::CheckLeftUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
+void JumpPointSearch::checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {
 	bool setOpenNodeFlag;
 
@@ -842,9 +844,9 @@ void JumpPointSearch::CheckLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 	{
 		//===================================================================
 		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
-		CheckLeftHorizontal(parentNode, x, y, randBrush);	
+		checkLeftHorizontal(parentNode, x, y, randBrush);	
 
-		CheckUpVertical(parentNode, x, y, randBrush);		
+		checkUpVertical(parentNode, x, y, randBrush);		
 		//===================================================================
 	}
 
@@ -867,18 +869,18 @@ void JumpPointSearch::CheckLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 		if (mDestinationNode->mX == x && mDestinationNode->mY == y)
 		{
 			
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y);
 
 			return;
 		}
 
-		setOpenNodeFlag = CheckLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
+		setOpenNodeFlag = checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
 		}
 
-		setOpenNodeFlag = CheckUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
+		setOpenNodeFlag = checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
@@ -892,7 +894,7 @@ void JumpPointSearch::CheckLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 //======================================================
 // 왼쪽 아래 대각선 함수입니다. 
 //======================================================
-void JumpPointSearch::CheckLeftDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
+void JumpPointSearch::checkLeftDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
 {
 	bool setOpenNodeFlag;
 
@@ -900,10 +902,10 @@ void JumpPointSearch::CheckLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 	{
 		//===================================================================
 		// 직선 조건에 맞으면 5방향으로 탐색하게 된다.
-		CheckLeftHorizontal(parentNode, x, y, randBrush);
+		checkLeftHorizontal(parentNode, x, y, randBrush);
 		
 
-		CheckDownVertical(parentNode,  x, y, randBrush);		
+		checkDownVertical(parentNode,  x, y, randBrush);		
 		//===================================================================
 	}
 
@@ -925,18 +927,18 @@ void JumpPointSearch::CheckLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 
 		if (mDestinationNode->mX == x && mDestinationNode->mY == y)
 		{
-			SetCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y);
 
 			return;
 		}
 
-		setOpenNodeFlag = CheckLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
+		setOpenNodeFlag = checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
 		}
 
-		setOpenNodeFlag = CheckDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
+		setOpenNodeFlag = checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
 		if (setOpenNodeFlag)
 		{
 			return;
@@ -949,7 +951,7 @@ void JumpPointSearch::CheckLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 //=======================================================
 // 대각선 함수의 수평 오른쪽 방향 
 //=======================================================
-bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush)
+bool JumpPointSearch::checkRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush)
 {
 
 	for (int iCnt = x; iCnt < mMapWidth; ++iCnt)
@@ -962,7 +964,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 		// 목적지 노드를 만났을 경우에는 그 자리에 노드 생성후 return 
 		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, nodeDir, x, y);
+			setCornerNode(parentNode, nodeDir, x, y);
 			
 			return true;
 		}
@@ -977,7 +979,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 		{
 			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 
 				return true;
 			}
@@ -987,7 +989,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 		{
 			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 
 				return true;
 			}
@@ -1001,7 +1003,7 @@ bool JumpPointSearch::CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 //=======================================================
 // 대각선 함수의 수평 왼쪽 방향
 //=======================================================
-bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
+bool JumpPointSearch::checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 
 	for (int iCnt = x; iCnt >= 0; --iCnt)
@@ -1016,7 +1018,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 		//=============================================
 		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, nodeDir, x, y);
+			setCornerNode(parentNode, nodeDir, x, y);
 
 			return true;
 		}
@@ -1032,7 +1034,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 		{
 			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-			    SetCornerNode(parentNode, nodeDir, x, y);
+			    setCornerNode(parentNode, nodeDir, x, y);
 
 				return true;
 			}
@@ -1042,7 +1044,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 		{
 			if(mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 				
 				return true;
 			}
@@ -1056,7 +1058,7 @@ bool JumpPointSearch::CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 //=======================================================
 // 대각선 함수의 수직 위 방향
 //=======================================================
-bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
+bool JumpPointSearch::checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 	
 	for (int iCnt = y; iCnt >= 0; --iCnt)
@@ -1072,7 +1074,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 		//=================================================
 		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, nodeDir, x, y);
+			setCornerNode(parentNode, nodeDir, x, y);
 
 			return true;
 		}
@@ -1088,7 +1090,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 		{
 			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 				
 				return true;
 			}
@@ -1098,7 +1100,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 		{
 			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 
 				return true;
 			}
@@ -1112,7 +1114,7 @@ bool JumpPointSearch::CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 //=======================================================
 // 대각선 함수의 수직 아래 방향
 //=======================================================
-bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
+bool JumpPointSearch::checkDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 
 	for (int iCnt = y; iCnt < mMapHeight; iCnt++)
@@ -1124,7 +1126,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION
 
 		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
 		{
-			SetCornerNode(parentNode, nodeDir, x, y);
+			setCornerNode(parentNode, nodeDir, x, y);
 
 			return true;
 		}
@@ -1139,7 +1141,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION
 		{
 			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);
+				setCornerNode(parentNode, nodeDir, x, y);
 				
 				return true;
 			}
@@ -1150,7 +1152,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION
 
 			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				SetCornerNode(parentNode, nodeDir, x, y);				
+				setCornerNode(parentNode, nodeDir, x, y);				
 
 				return true;
 			}
@@ -1166,7 +1168,7 @@ bool JumpPointSearch::CheckDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION
 //================================================================
 // 오픈 리스트에서 정렬되어 있던 F값 노드를 뽑는다.
 //================================================================
-JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
+JumpPointSearch::NODE* JumpPointSearch::selectOpenListNode()
 {
 	// F값이 작은 순서로 정렬해놨기 때문에 begin값을 뽑으면 첫 노드를 뽑을 수 있다.
 	CList<JumpPointSearch::NODE*>::Iterator iter = mOpenList.begin();
@@ -1199,7 +1201,7 @@ JumpPointSearch::NODE* JumpPointSearch::SelectOpenListNode()
 //=============================================================
 // 모든 리스트와 블럭을 초기화 시킨다.
 //=============================================================
-void JumpPointSearch::ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize)
+void JumpPointSearch::ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize)
  {	
 	if (mFuncSetFlag == false)
 	{
@@ -1212,19 +1214,21 @@ void JumpPointSearch::ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize
 
 	mFuncSetFlag = true;
 
-	ResetOpenList();
+	resetOpenList();
 
-	ResetCloseList();
+	resetCloseList();
 
-	ResetRouteList();
+	resetRouteList();
 
 	resetRouteNodeArray(routeNodeArray, routeNodeArraySize);
 
-	OptimizeRouteReset();
+	resetOptimizeArray(optimizeNodeArray, optimizeNodeArraySize);
+
+	optimizeRouteReset();
 
 	resetJspMap();
 
-	ResetBlock();
+	resetBlock();
 }
 
 
@@ -1232,7 +1236,7 @@ void JumpPointSearch::ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize
 //==================================================================
 // 시작점과 도착점을 제외한 리스트와 블럭을 초기화하고 다시 길을 찾는다.
 //==================================================================
-void JumpPointSearch::ReStart(RouteNode* routeNodeArray, int routeNodeArraySize)
+void JumpPointSearch::ReStart(RouteNode* routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize)
 {
 	if (mFuncSetFlag == false)
 	{
@@ -1245,26 +1249,28 @@ void JumpPointSearch::ReStart(RouteNode* routeNodeArray, int routeNodeArraySize)
 
 	mFuncSetFlag = true;
 
-	ResetOpenList();
+	resetOpenList();
 
-	ResetCloseList();
+	resetCloseList();
 
-	ResetRouteList();
+	resetRouteList();
 
 	resetJspMap();
 
-	RouteReset();
+	routeReset();
 
 	resetRouteNodeArray(routeNodeArray, routeNodeArraySize);
 
-	OptimizeRouteReset();
+	resetOptimizeArray(optimizeNodeArray, optimizeNodeArraySize);
+
+	optimizeRouteReset();
 }
 
 
 //=============================================================
 // 오픈리스트 노드를 리셋한다.
 //=============================================================
-void JumpPointSearch::ResetOpenList()
+void JumpPointSearch::resetOpenList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = mOpenList.end();
 
@@ -1279,7 +1285,7 @@ void JumpPointSearch::ResetOpenList()
 //=============================================================
 // 클로즈리스트 노드를 리셋한다.
 //=============================================================
-void JumpPointSearch::ResetCloseList()
+void JumpPointSearch::resetCloseList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = mCloseList.end();
 
@@ -1294,7 +1300,7 @@ void JumpPointSearch::ResetCloseList()
 //=============================================================
 // 시작점에서 목적지까지의 List를 reset한다.
 //=============================================================
-void JumpPointSearch::ResetRouteList()
+void JumpPointSearch::resetRouteList()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = mRouteList.end();
 
@@ -1308,7 +1314,7 @@ void JumpPointSearch::ResetRouteList()
 //=============================================================
 // 자연스러운 시작점에서 목적지까지의 경로를 reset한다.
 //=============================================================
-void JumpPointSearch::OptimizeRouteReset()
+void JumpPointSearch::optimizeRouteReset()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = mOptimizeRouteList.end();
 
@@ -1323,7 +1329,7 @@ void JumpPointSearch::OptimizeRouteReset()
 //=============================================================
 // 블럭들을 리셋한다.
 //=============================================================
-void JumpPointSearch::ResetBlock()
+void JumpPointSearch::resetBlock()
 {
 	for (int iCntY = 0; iCntY < mMapHeight; iCntY++)
 	{
@@ -1351,7 +1357,7 @@ void JumpPointSearch::resetJspMap()
 //=====================================================================
 // 시작점과 목적지 장애물을 제외하고 블럭 색깔을 리셋한다.
 //======================================================================
-void JumpPointSearch::RouteReset()
+void JumpPointSearch::routeReset()
 {
 	for (int iCntY = 0; iCntY < mMapHeight; iCntY++)
 	{
@@ -1368,7 +1374,7 @@ void JumpPointSearch::RouteReset()
 //==================================================================
 // 정방향으로 목적지까지의 경로를 넣는다.
 //==================================================================
-void JumpPointSearch::InsertRoute(NODE* node)
+void JumpPointSearch::insertRoute(NODE* node)
 {
 	while (1)
 	{	
@@ -1388,7 +1394,7 @@ void JumpPointSearch::InsertRoute(NODE* node)
 //====================================================
 // 최적화 길을 설정하는 함수입니다.
 //====================================================
-void JumpPointSearch::PathOptimizing()
+void JumpPointSearch::pathOptimizing()
 {
 
 	int startX;
@@ -1488,9 +1494,9 @@ void JumpPointSearch::settingRouteArray(RouteNode* routeNodeArray, int routeArra
 {
 	int index = 0;
 
-	CList<NODE*>::Iterator iterE = mOptimizeRouteList.end();
+	CList<NODE*>::Iterator iterE = mRouteList.end();
 
-	for (CList<NODE*>::Iterator iter = mOptimizeRouteList.begin(); iter != iterE; ++iter)
+	for (CList<NODE*>::Iterator iter = mRouteList.begin(); iter != iterE; ++iter)
 	{
 		routeNodeArray[index].mPosX = iter->mX;
 
@@ -1508,8 +1514,6 @@ void JumpPointSearch::settingRouteArray(RouteNode* routeNodeArray, int routeArra
 	}
 }
 
-
-
 void JumpPointSearch::resetRouteNodeArray(RouteNode* routeNodeArray, int routeNodeArraySize)
 {
 	for (int iCnt = 0; iCnt < routeNodeArraySize; ++iCnt)
@@ -1517,6 +1521,41 @@ void JumpPointSearch::resetRouteNodeArray(RouteNode* routeNodeArray, int routeNo
 		routeNodeArray[iCnt].mRouteFlag = false;
 	}
 }
+
+
+void JumpPointSearch::settingOptimizeArray(RouteNode* optimizeNodeArray, int optimizeNodeArraySize)
+{
+	int index = 0;
+
+	CList<NODE*>::Iterator iterE = mOptimizeRouteList.end();
+
+	for (CList<NODE*>::Iterator iter = mOptimizeRouteList.begin(); iter != iterE; ++iter)
+	{
+		optimizeNodeArray[index].mPosX = iter->mX;
+
+		optimizeNodeArray[index].mPosY = iter->mY;
+
+		optimizeNodeArray[index].mRouteFlag = true;
+
+		index += 1;
+
+		if (index >= optimizeNodeArraySize)
+		{
+			return;
+		}
+
+	}
+}
+
+
+void JumpPointSearch::resetOptimizeArray(RouteNode* optimizeNodeArray, int optimizeNodeArraySize)
+{
+	for (int iCnt = 0; iCnt < optimizeNodeArraySize; ++iCnt)
+	{
+		optimizeNodeArray[iCnt].mRouteFlag = false;
+	}
+}
+
 
 //=============================================================
 // F값 작은 순으로 정렬한다.

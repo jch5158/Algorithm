@@ -1,18 +1,6 @@
 #pragma once
 
-// 타일의 가로 세로 길이
-#define PERMETER_OF_SQUARE 20
 
-// 세로 타일 개수
-#define MAX_HEIGHT 40
-
-// 가로 타일 개수
-#define MAX_WIDTH 70
-
-
-
-
-// TODO : JSP 클래스화하기
 class JumpPointSearch
 {
 public:
@@ -41,13 +29,13 @@ public:
     ~JumpPointSearch();
 
 
-    bool PathFind(int startX, int startY, int destinationX, int destinationY, RouteNode *routeNodeArray, int routeNodeArraySize);
+    bool PathFind(int startX, int startY, int destinationX, int destinationY, RouteNode *routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
 
     void SettingMapAttrivute(int posX, int posY);
 
-    void ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize);
+    void ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
 
-    void ReStart(RouteNode* routeNodeArray, int routeNodeArraySize);
+    void ReStart(RouteNode* routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
     
 private:
 
@@ -72,87 +60,104 @@ private:
     };
 
 
-    // TODO : private 함수 함수명 전환하기  
-    NODE* FindOpenList(int openX, int openY);
+    NODE* findOpenList(int openX, int openY);
 
-    bool FindCloseList(int openX, int openY);
+    bool findCloseList(int openX, int openY);
 
-    void InsertOpenNode(NODE* node);
+    void insertOpenNode(NODE* node);
 
-    NODE* SelectOpenListNode();
+    NODE* selectOpenListNode();
 
-    void CheckDirection(NODE* node, int x, int y);
+    void checkDirection(NODE* node, int x, int y);
 
 
-    // TODO : mMapWidth, mMapHeight 사용하는 로직으로 변경
     //===================================================================================================
     // 직선 방향을 탐색하는 함수입니다.
-    void CheckUpVertical(NODE* parentNode, int x, int y, HBRUSH randBrush);
+    void checkUpVertical(NODE* parentNode, int x, int y, HBRUSH randBrush);
 
-    void CheckDownVertical(NODE* parentNode, int x, int y, HBRUSH randBrush);
+    void checkDownVertical(NODE* parentNode, int x, int y, HBRUSH randBrush);
 
-    void CheckRightHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush);
+    void checkRightHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush);
 
-    void CheckLeftHorizontal(NODE* parentNode,  int x, int y, HBRUSH randBrush);
+    void checkLeftHorizontal(NODE* parentNode,  int x, int y, HBRUSH randBrush);
     //==================================================================================================
 
 
     //==================================================================================================================
     // 대각선 방향을 탐색하는 함수입니다.
-    void CheckRightUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall = true);
+    void checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall = true);
 
-    void CheckRightDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
+    void checkRightDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
 
-    void CheckLeftUp(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
+    void checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall = true);
     
-    void CheckLeftDown(NODE* parentNode,  int x, int y, HBRUSH randBrush, bool firstCall = true);
+    void checkLeftDown(NODE* parentNode,  int x, int y, HBRUSH randBrush, bool firstCall = true);
     //===================================================================================================================
 
 
 
     //===============================================================================================================================
     // 대각선의 직선 탐색 함수입니다.
-    bool CheckRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush);
+    bool checkRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush);
     
-    bool CheckLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
+    bool checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
     
-    bool CheckUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
+    bool checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
     
-    bool CheckDownDiagonalVertical(NODE* parentNode,  NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
+    bool checkDownDiagonalVertical(NODE* parentNode,  NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush);
     //===============================================================================================================================
 
 
 
-    void SetCornerNode(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y);
+    void setCornerNode(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y);
 
-    void InsertRoute(NODE* node);
+    void insertRoute(NODE* node);
 
 
     // 루트 최적화
-    void PathOptimizing();
+    void pathOptimizing();
  
-    void ResetOpenList();
+    // 오픈 리스트 리셋
+    void resetOpenList();
 
-    void ResetCloseList();
+    // 클로즈 리스트 리셋
+    void resetCloseList();
 
-    void ResetRouteList();
+    // 일반 루트 리스트 리셋
+    void resetRouteList();
+    
+    // 최적화 루트 리스트 리셋
+    void optimizeRouteReset();
 
-    void ResetBlock();
+    // brush 블럭 리셋
+    void resetBlock();
 
+    // jsp 맵 리셋
     void resetJspMap();
 
-    void RouteReset();
+    // brush 시작점 장애물 끝점 제외하고 리셋
+    void routeReset();
+    
 
-    void OptimizeRouteReset();
-
-    void resetRouteNodeArray(RouteNode* routeNodeArray, int routeNodeArraySize);
-
+    // 배열 루트 셋팅
     void settingRouteArray(RouteNode* routeNodeArray, int routeNodeArraySize);
 
+    // 루트 배열 리셋
+    void resetRouteNodeArray(RouteNode* routeNodeArray, int routeNodeArraySize);
+
+
+    // TODO : 최적화 배열 셋팅
+    void settingOptimizeArray(RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
+
+    // TODO : 최적화 배열 초기화
+    void resetOptimizeArray(RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
+
+
+
+    // F 값 정렬
     void openListBubbleSort();
 
 
-    // TODO : mJspMap으로 로직 변경하기
     char **mJspMap;
     
     int mMapWidth;
