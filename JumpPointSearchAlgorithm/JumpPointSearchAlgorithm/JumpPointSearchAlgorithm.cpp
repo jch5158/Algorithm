@@ -52,8 +52,11 @@ int                greenY;
 
 bool               returnFlag = false;
 
+JumpPointSearch    jspObject(MAX_WIDTH, MAX_HEIGHT);
 
-JumpPointSearch::NODE* retNode;
+
+RouteNode          routeNodeArray[100];
+
 
 
 extern CList<JumpPointSearch::NODE*> routeList;
@@ -61,7 +64,7 @@ extern CList<JumpPointSearch::NODE*> routeList;
 extern CList<JumpPointSearch::NODE*> optimizeRouteList;
 
 
-//extern HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
+HBRUSH brushBlockList[MAX_WIDTH][MAX_HEIGHT];
 
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
@@ -81,8 +84,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: 여기에 코드를 입력합니다.
-
+    
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_JUMPPOINTSEARCHALGORITHM, szWindowClass, MAX_LOADSTRING);
@@ -181,20 +183,21 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    static HANDLE hTimer; 
+    static HANDLE       hTimer; 
 
-    static HPEN oldPen;
-    static HPEN redPen;
-    static HPEN pinkPen;
+    static HPEN         oldPen;
+    static HPEN         redPen;
+    static HPEN         pinkPen;
 
     // 마우스 좌표
-    static DWORD mouseX;
-    static DWORD mouseY;
+    static DWORD        mouseX;
+    static DWORD        mouseY;
 
     
-    static bool wallFlag = false;
-    static bool wallClearFlag = false;
-    static bool loopFlag = false;
+    static bool         wallFlag = false;
+    static bool         wallClearFlag = false;
+    static bool         loopFlag = false;
+    
 
     switch (message)
     {
@@ -255,19 +258,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
 
         if (wParam == VK_RETURN)
-        {
-            retNode = nullptr;
-            
-            returnFlag = true;
-            
-            JumpPointSearch::ReStart();
+        {            
+            jspObject.ReStart(routeNodeArray, 100);
+
+
+            for (int iCntY = 0; iCntY < MAX_HEIGHT; ++iCntY)
+            {
+                for (int iCntX = 0; iCntX < MAX_WIDTH; ++iCntX)
+                {
+                    if (brushBlockList[iCntX][iCntY] == grayBrush)
+                    {
+                        jspObject.SettingMapAttrivute(iCntX, iCntY);
+                    }
+                }
+            }
+
         }
 
         if (wParam == VK_SPACE)
         {
-            retNode = nullptr;
-
-            JumpPointSearch::ResetAll();
+            jspObject.ResetAll(routeNodeArray, 100);
         }
 
         InvalidateRect(hWnd, nullptr, false);
@@ -366,40 +376,61 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         SelectObject(hdc, oldPen);
         
-        for (int iCnt1 = 0; iCnt1 < MAX_HEIGHT; iCnt1++)
+        for (int iCntY = 0; iCntY < MAX_HEIGHT; iCntY++)
         {
-            for (int iCnt2 = 0; iCnt2 < MAX_WIDTH; iCnt2++)
+            for (int iCntX = 0; iCntX < MAX_WIDTH; iCntX++)
             {
-                oldBrush = (HBRUSH)SelectObject(hdc, brushBlockList[iCnt2][iCnt1]);
+                oldBrush = (HBRUSH)SelectObject(hdc, brushBlockList[iCntX][iCntY]);
 
-                Rectangle(hdc, PERMETER_OF_SQUARE * iCnt2, PERMETER_OF_SQUARE * iCnt1, PERMETER_OF_SQUARE * (iCnt2 + 1), PERMETER_OF_SQUARE * (iCnt1 + 1));
+                Rectangle(hdc, PERMETER_OF_SQUARE * iCntX, PERMETER_OF_SQUARE * iCntY, PERMETER_OF_SQUARE * (iCntX + 1), PERMETER_OF_SQUARE * (iCntY + 1));
 
                 SelectObject(hdc, oldBrush);
             }
         }
 
 
+        oldPen = (HPEN)SelectObject(hdc, redPen);
 
-        JumpPointSearch::NODE* paintNode = retNode;
-
-        int routeX;
-        
-        int routeY;
-
-        do
+        for (int index = 0; index < 99; ++index)
         {
-            if (paintNode == nullptr)
+            if (routeNodeArray[index].mRouteFlag)
+            {
+                MoveToEx(hdc, 10 + (routeNodeArray[index].mPosX * PERMETER_OF_SQUARE), 10 + (routeNodeArray[index].mPosY * PERMETER_OF_SQUARE), nullptr);
+            }
+            else
+            {
+                break;
+            }              
+            
+
+            if (routeNodeArray[index + 1].mRouteFlag)
+            {
+
+                BresenhamLine::CatchLine(routeNodeArray[index].mPosX, routeNodeArray[index].mPosY, routeNodeArray[index+1].mPosX, routeNodeArray[index + 1].mPosY);
+                
+
+                LineTo(hdc, 10 + (routeNodeArray[index + 1].mPosX * PERMETER_OF_SQUARE), 10 + (routeNodeArray[index + 1].mPosY * PERMETER_OF_SQUARE));
+            }
+            else
             {
                 break;
             }
+        }
 
-            CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
+        SelectObject(hdc, oldPen);
+        
 
-            CList<JumpPointSearch::NODE*>::Iterator iter = optimizeRouteList.begin();
-
+        if (returnFlag)
+        {
+            /*
+            
+            int routeX;
+        
+            int routeY; 
+            
             while (1)
             {
-                
+
                 routeX = iter->mX;
                 routeY = iter->mY;
 
@@ -409,7 +440,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     break;
                 }
-                
+
                 if (!BresenhamLine::CatchLine(routeX, routeY, iter->mX, iter->mY))
                 {
                     break;
@@ -430,77 +461,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                         }
                     }
                 }
-            }
+            }*/
 
-        } while (0);
+            
+         
 
 
-        do
-        {
-            if (paintNode == nullptr)
-            {
-                break;
-            }
 
-            oldPen = (HPEN)SelectObject(hdc, redPen);
 
-            CList<JumpPointSearch::NODE*>::Iterator iterE = routeList.end();
+            //oldPen = (HPEN)SelectObject(hdc, pinkPen);
+            //
+            //iter = optimizeRouteList.begin();
 
-            CList<JumpPointSearch::NODE*>::Iterator iter = routeList.begin();
+            //while (1)
+            //{
+            //    MoveToEx(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE), nullptr);
 
-            while (1)
-            {
-                MoveToEx(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE), nullptr);
+            //    routeX = iter->mX;
+            //    routeY = iter->mY;
 
-                ++iter;
+            //    ++iter;
 
-                if (iter == iterE)
-                {
-                    break;
-                }
+            //    if (iter == iterE)
+            //    {
+            //        break;
+            //    }
 
-                LineTo(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE));
-            }
+            //    LineTo(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE));
 
-            SelectObject(hdc, oldPen);
+            //}
 
-        } while (0);
-
-        do
-        {
-            if (paintNode == nullptr)
-            {
-                break;
-            }
-
-            oldPen = (HPEN)SelectObject(hdc, pinkPen);
-
-            CList<JumpPointSearch::NODE*>::Iterator iterE = optimizeRouteList.end();
-
-            CList<JumpPointSearch::NODE*>::Iterator iter = optimizeRouteList.begin();
-
-            while (1)
-            {
-                MoveToEx(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE), nullptr);
-
-                routeX = iter->mX;
-                routeY = iter->mY;
-
-                ++iter;
-
-                if (iter == iterE)
-                {
-                    break;
-                }
-
-                LineTo(hdc, 10 + (iter->mX * PERMETER_OF_SQUARE), 10 + (iter->mY * PERMETER_OF_SQUARE));
-
-            }
-
-            SelectObject(hdc, oldPen);
-
-        } while (0);
-
+            //SelectObject(hdc, oldPen);
+        }
 
 
 
@@ -529,19 +521,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 void CALLBACK TimerProc(HWND hWnd, UINT uMsg, UINT idEvent, DWORD dwTime)
 {
 
-    if (returnFlag == true)
-    {
-        retNode = JumpPointSearch::PathFind(greenX, greenY, redX, redY);
-        if (retNode != nullptr)
-        {
-            returnFlag = false;
-        }
-
-        InvalidateRect(hWnd, nullptr, false);
-
-    }
+   returnFlag = jspObject.PathFind(greenX, greenY, redX, redY, routeNodeArray,100);
+   if (returnFlag)
+   {
+       InvalidateRect(hWnd, nullptr, false);
+   }
 
 }
+
 // 정보 대화 상자의 메시지 처리기입니다.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {

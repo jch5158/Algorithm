@@ -15,3 +15,9 @@
 #include <tchar.h>
 
 
+struct RouteNode
+{
+	bool mRouteFlag;
+	int mPosY;
+	int mPosX;
+};
