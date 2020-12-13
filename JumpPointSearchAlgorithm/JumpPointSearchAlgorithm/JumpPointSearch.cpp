@@ -49,12 +49,40 @@ JumpPointSearch::~JumpPointSearch()
 
 
 
-void JumpPointSearch::SettingMapAttrivute(int posX, int posY)
+void JumpPointSearch::SettingMapAttribute(int posX, int posY)
 {
 
 	mJspMap[posY][posX] = (char)NODE_ATTRIBUTE::NODE_BLOCK;
 
 }
+
+
+void JumpPointSearch::setNodeGHF(NODE* pParentNode, int x, int y, float* pG, float* pH, float* pF)
+{		
+	if (pParentNode == nullptr)
+	{
+		*pG = 0.0f;
+	}
+	else
+	{
+		// subX 와 subY와 동시에 1 이상 차이날 경우 대각선이다.
+		if (abs(pParentNode->mX - x) >= 1 && abs(pParentNode->mY - y) >= 1)
+		{
+			*pG += 1.5f;
+		}
+		else
+		{
+			*pG += 1.0f;
+		}
+	}
+	
+	*pH = (float)(abs(mDestinationNode->mX - x) + abs(mDestinationNode->mY - y));
+
+	*pF = *pG + *pH;
+
+	return;
+}
+
 
 
 
@@ -75,6 +103,7 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 	{
 		// 목적지 노드 동적할당
 		mDestinationNode = (NODE*)malloc(sizeof(NODE));
+		
 
 		// 목적지 노드의 좌표 설정
 		mDestinationNode->mX = destinationX;
@@ -83,6 +112,9 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 		// 시작 노드 설정
 		mStartNode = (NODE*)malloc(sizeof(NODE));
 
+		// 시작노드 셋팅
+		setNodeGHF(nullptr, startX, startY, &mStartNode->G, &mStartNode->H, &mStartNode->F);
+
 		// 시작노드 좌표설정
 		mStartNode->mX = startX;
 		mStartNode->mY = startY;
@@ -90,19 +122,11 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 		mStartNode->mNodeDir = (BYTE)NODE_DIRECTION::NODE_DIR_ALL;
 
 		mStartNode->prev = nullptr;
-
-		// 시작노드 G 설정
-		mStartNode->G = 0;
-
-		// 목적지까지의 절대값	
-		mStartNode->H += (float)(abs(destinationX - startX) + abs(destinationY - startY));
-
-		mStartNode->F = mStartNode->G + mStartNode->H;
-
-		// 클로즈 리스트에 추가
+		
+		// 오픈 리스트에 추가
 		mOpenList.PushBack(mStartNode);
 
-		// 한번만 시작 셋팅되도록 설정
+		// 한 번만 시작 셋팅되도록 설정
 		mFuncSetFlag = false;
 	}
 
@@ -124,6 +148,7 @@ bool JumpPointSearch::PathFind(int startX, int startY, int destinationX, int des
 		return true;
 	}
 	
+	// 길 찾기 로직 시작
 	insertOpenNode(curNode);
 
 	// openList F값 정렬
@@ -142,9 +167,9 @@ JumpPointSearch::NODE* JumpPointSearch::findOpenList(int openX, int openY)
 
 	for (CList<NODE*>::Iterator iter = mOpenList.begin(); iter != iterE; ++iter)
 	{
-		if (iter->mX == openX && iter->mY == openY)
+		if ((*iter)->mX == openX && (*iter)->mY == openY)
 		{
-			return (*iter)->data;
+			return *iter;
 		}
 	}
 
@@ -160,7 +185,7 @@ bool JumpPointSearch::findCloseList(int closeX, int closeY)
 
 	for (CList<NODE*>::Iterator iter = mCloseList.begin(); iter != iterE; ++iter)
 	{
-		if (iter->mX == closeX && iter->mY == closeY)
+		if ((*iter)->mX == closeX && (*iter)->mY == closeY)
 		{
 			return true;
 		}
@@ -180,9 +205,6 @@ void JumpPointSearch::insertOpenNode(JumpPointSearch::NODE* node)
 	int posX = node->mX;
 	int posY = node->mY;
 
-	int newNodePosX = 0;
-	int newNodePosY = 0;
-
 	checkDirection(node, posX, posY);
 
 	return;
@@ -195,18 +217,17 @@ void JumpPointSearch::checkDirection(NODE* node, int x, int y)
 	
 	HBRUSH randBrush;
 
-	do
+	for (;;)
 	{
 		randBrush = CreateSolidBrush(RGB(rand() % 130 + 126, rand() % 130 + 126, rand() % 130 + 126));
 
-		if (randBrush == grayBrush || randBrush == routeBrush)
+		if (randBrush != grayBrush && randBrush != routeBrush)
 		{
-			continue;
+			break;
 		}
+	}
 
-	} while (0);
-
-
+	// 노드 방향에 맞는 탐색함수를 호출한다.
 	switch ((NODE_DIRECTION)node->mNodeDir)
 	{
 	case NODE_DIRECTION::NODE_DIR_RR:
@@ -281,13 +302,17 @@ void JumpPointSearch::setCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 {
 	NODE* newNode = nullptr;
 
-	NODE* retOpenNode;
-
-	int subX;
-	int subY;
-
+	NODE* retOpenNode = nullptr;
+	
+	
 	if (findCloseList(x, y) == false)
 	{
+		float tempG = 0;
+		float tempH = 0;
+		float tempF = 0;
+
+		setNodeGHF(parentNode, x, y, &tempG, &tempH, &tempF);
+
 		// 오픈리스트에 없는 노드라면은 생성
 		retOpenNode = findOpenList(x, y);
 		if (retOpenNode == nullptr)
@@ -295,34 +320,14 @@ void JumpPointSearch::setCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 			newNode = (NODE*)malloc(sizeof(NODE));
 
 			newNode->mX = x;
-			newNode->mY = y;
-		
-			newNode->G = parentNode->G;
 
-			// 부모 노드와 자식 노드의 x,y 차이 값 저장
-			subX = abs(parentNode->mX - newNode->mX);
-			subY = abs(parentNode->mY - newNode->mY);
+			newNode->mY = y;			
 
-			// subX 와 subY와 동시에 1 이상 차이날 경우 대각선이다.
-			if (subX >= 1 && subY >= 1)
-			{
-				newNode->G += ((float)subX) * 1.5f;
-			}
-			else
-			{
-				if (subX == 0)
-				{
-					newNode->G += ((float)subY) * 1.0f;
-				}
-				else
-				{
-					newNode->G += ((float)subX) * 1.0f;
-				}
-			}
+			newNode->G = tempG;
 
-			newNode->H = (float)(abs(mDestinationNode->mX - newNode->mX) + abs(mDestinationNode->mY - newNode->mY));
+			newNode->H = tempH;
 
-			newNode->F = newNode->G + newNode->H;
+			newNode->F = tempF;
 
 			newNode->mNodeDir = (BYTE)nodeDir;
 
@@ -338,42 +343,20 @@ void JumpPointSearch::setCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 			mOpenList.PushBack(newNode);
 		}
 		else
-		{
-			// 기존 오픈리스트에 있었던 위치라면, 해당 노드의 부모의 G값을 비교하여 새로 연결해준다.
-			if (retOpenNode->prev->G < parentNode->G)
-			{
+		{			
+			// 기존에 오픈리스트에 있었던 노드 부모의 G 값이 parentNode의 G값 보다 크다면
+			// parentNode를 부모로서 새로 이어주는 셋팅을 한다.
+			if (parentNode->G < retOpenNode->prev->G)
+			{				
+				retOpenNode->G = tempG;
 
-				retOpenNode->G = parentNode->G;
+				retOpenNode->H = tempH;
 
-				// 부모 노드와 자식 노드의 x,y 차이 값 저장
-				subX = abs(parentNode->mX - retOpenNode->mX);
-				subY = abs(parentNode->mY - retOpenNode->mY);
-
-				// subX 와 subY와 동시에 1 이상 차이날 경우 대각선이다.
-				if (subX >= 1 && subY >= 1)
-				{
-					retOpenNode->G += ((float)subX) * 1.5f;
-				}
-				else
-				{
-					if (subX == 0)
-					{
-						retOpenNode->G += ((float)subY) * 1.0f;
-					}
-					else
-					{
-						retOpenNode->G += ((float)subX) * 1.0f;
-					}
-				}
-
-				retOpenNode->H = (float)(abs(mDestinationNode->mX - retOpenNode->mX) + abs(mDestinationNode->mY - retOpenNode->mY));
-
-				retOpenNode->F = retOpenNode->G + retOpenNode->H;
+				retOpenNode->F = tempF;
 
 				retOpenNode->mNodeDir = (BYTE)nodeDir;
 
-				retOpenNode->prev = parentNode;
-				
+				retOpenNode->prev = parentNode;				
 			}
 		}
 	}
@@ -388,82 +371,91 @@ void JumpPointSearch::setCornerNode(NODE* parentNode,  NODE_DIRECTION nodeDir, i
 //===============================================
 void JumpPointSearch::checkRightHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {	
-	
 	//=================================================================================
-	// 오른쪽 위 보조 탐색 영억을 생성하는
+	// x 좌표가 x + 1 < mMapWidth 일 경우에만 로직을 수행합니다. 
 	//=================================================================================
-	if (y > 0 && x + 1 < mMapWidth)
+	if (x + 1 < mMapWidth)
 	{
-		if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
-		{	
-			checkRightUp(parentNode, x, y, randBrush, false);				
-		}
-	}
-
-	//=================================================================================
-	// 오른쪽 아래 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (y + 1 < mMapHeight && x + 1 < mMapWidth)
-	{
-		if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
+		//=================================================================================
+		// 첫 탐색 시 오른쪽 위 보조 탐색 영억을 확인한다.
+		//=================================================================================
+		if (y > 0)
 		{
-			checkRightDown(parentNode, x, y, randBrush, false);	
+			if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkRightUp(parentNode, x, y, randBrush, false);
+			}
 		}
-	}
+
+		//=================================================================================
+		// 첫 탐색 시 오른쪽 아래 보조 탐색 영억을 확인한다.
+		//=================================================================================
+		if (y + 1 < mMapHeight)
+		{
+			if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkRightDown(parentNode, x, y, randBrush, false);
+			}
+		}
+	}	
 	
-	//============================================================================
-	// iCnt = x + 1 을 하는 이유는 해당 위치는 현재 노드가 있는 위치이기 때문이다. 
-	// iCnt + 1 < mMapWidth 인 이유는 위와 아래의 벽이 있을 경우 X + 1 좌표에 
-	// 벽이 없는지 확인하기 때문으로 오버플로우가 발생되지 않도록 하기 위함입니다.
-	//============================================================================
-	for (int iCnt = x + 1; iCnt < mMapWidth; ++iCnt)
+	//===============================================================================
+	// xIndex = x + 1 을 해서 다음 위치부터 탐색을 한다. 
+	//===============================================================================
+	for (int xIndex = x + 1; xIndex < mMapWidth; ++xIndex)
 	{
-		// 벽을 만났으 경우 retur nullptr 을 한다.
-		if (mJspMap[y][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		// 벽을 만났으 경우 아무것도 하지 않고 return 
+		if (mJspMap[y][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return;
 		}
 
 		// 목적지를 만날 경우 바로 이어주고 return 한다. 
-		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
+		if (xIndex == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, xIndex, y);
 
 			return;
 		}
 
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[xIndex][y] != blueBrush && brushBlockList[xIndex][y] != yellowBrush)
 		{
-			brushBlockList[iCnt][y] = randBrush;
+			brushBlockList[xIndex][y] = randBrush;
 		}
 
 
-		//====================================================================
-		// y 값이 0 이상일 경우에만 위의 벽을 확인할 수 있다.
-		//====================================================================
-		if (y > 0 && iCnt + 1 < mMapWidth )
-		{
-			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+		//=============================================================================
+		// x 값이 mMapWidth 보다 작을 경우에만 오버플로우 없이 x+1 위치를 확인할 수 있다.
+		//=============================================================================
+		if (xIndex + 1 < mMapWidth)
+		{		
+			//=============================================================================
+			// y 값이 1 이상일 경우에만 위의 벽을 확인할 수 있다.
+			//=============================================================================
+			if (y > 0)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
-				
-				return;
+				if (mJspMap[y - 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][xIndex + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					// 해당 위치에 노드 만들기
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, xIndex, y);
+
+					return;
+				}
 			}
-		}
 
-
-		//====================================================================
-		// y 값이 y + 1 < mMapHeight 일 경우에만 위의 벽을 확인할 수 있다.
-		//====================================================================
-		if (y + 1 < mMapHeight && iCnt + 1 < mMapWidth)
-		{
-			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			//============================================================================
+			// y 값이 y + 1 < mMapHeight 일 경우에만 위의 벽을 확인할 수 있다.	
+			//============================================================================
+			if (y + 1 < mMapHeight)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, iCnt, y);
-			
-				return;
+				if (mJspMap[y + 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][xIndex + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_RR, xIndex, y);
+
+					return;
+				}
 			}
 		}
 	}
@@ -478,71 +470,78 @@ void JumpPointSearch::checkRightHorizontal(NODE* parentNode, int x, int y, HBRUS
 void JumpPointSearch::checkLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {
 
-	//=================================================================================
-	// 왼쪽 위 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (y > 0 && x > 0)
+	if (x > 0)
 	{
-		if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
-		{		
-			checkLeftUp(parentNode, x, y, randBrush, false);			
-		}
-	}
-
-	//=================================================================================
-	// 왼쪽 아래 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (y + 1 < mMapHeight && x > 0)
-	{
-		if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
+		//=================================================================================
+		// 첫 탐색 시 왼쪽 위 보조 탐색 영역을 확인합니다.
+		//=================================================================================
+		if (y > 0)
 		{
-			checkLeftDown(parentNode, x, y, randBrush, false);		
+			if (mJspMap[y - 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkLeftUp(parentNode, x, y, randBrush, false);
+			}
 		}
-	}
 
-	for (int iCnt = x - 1; iCnt >= 0; --iCnt)
+		//=================================================================================
+		// 첫 탐색 시 왼쪽 아래 보조 탐색 영억을 확인합니다.
+		//=================================================================================
+		if (y + 1 < mMapHeight)
+		{
+			if (mJspMap[y + 1][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkLeftDown(parentNode, x, y, randBrush, false);
+			}
+		}
+	}	
+
+
+	for (int xIndex = x - 1; xIndex >= 0; --xIndex)
 	{
 		// 해당 좌표에 장애물을 만나면 바로 return 한다.
-		if (mJspMap[y][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[y][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return;
 		}
 
 
 		// 목적지를 만나면 이어주고 바로 return 한다.
-		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
+		if (xIndex == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
-			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, xIndex, y);
 
 			return;
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[xIndex][y] != blueBrush && brushBlockList[xIndex][y] != yellowBrush)
 		{
-			brushBlockList[iCnt][y] = randBrush;
+			brushBlockList[xIndex][y] = randBrush;
 		}
 
-		if (y > 0 && iCnt - 1 >= 0)
+
+		if (xIndex > 0)
 		{
-			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (y > 0)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+				if (mJspMap[y - 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][xIndex - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, xIndex, y);
 
-				return;
+					return;
+				}
 			}
-		}
 
-
-		if (y + 1 < mMapHeight && iCnt - 1 >= 0)
-		{
-			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (y + 1 < mMapHeight)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, iCnt, y);
+				if (mJspMap[y + 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][xIndex - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_LL, xIndex, y);
 
-				return;
+					return;
+				}
 			}
-		}
+		}	
 	}
 
 	return;
@@ -553,36 +552,39 @@ void JumpPointSearch::checkLeftHorizontal(NODE* parentNode, int x, int y, HBRUSH
 // 수직 위 직선 탐색 함수입니다.
 //===============================================
 void JumpPointSearch::checkUpVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
-{	
-	
-	//=================================================================================
-	// 왼쪽 위 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (x > 0 && y > 0)
+{		
+	if (y > 0)
 	{
-		if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+		//=================================================================================
+		// 첫 탐색 시 왼쪽 위 보조 탐색 영억을 확인합니다.
+		//=================================================================================
+		if (x > 0)
 		{
-			checkLeftUp(parentNode, x, y, randBrush, false);	
+			if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkLeftUp(parentNode, x, y, randBrush, false);
+			}
+		}
+
+		//=================================================================================
+		// 첫 탐색 시 오른쪽 위 보조 탐색 영억을 확인합니다.
+		//=================================================================================
+		if (x + 1 < mMapWidth)
+		{
+			if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkRightUp(parentNode, x, y, randBrush, false);
+			}
 		}
 	}
+	
 
-	//=================================================================================
-	// 오른쪽 위 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (x + 1 < mMapWidth && y > 0)
-	{
-		if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
-		{ 	
-			checkRightUp(parentNode, x, y, randBrush, false);	
-		}
-	}
-
-	for (int iCnt = y - 1; iCnt >= 0; --iCnt)
+	for (int yIndex = y - 1; yIndex >= 0; --yIndex)
 	{
 		//=============================================
 		// 해당 위치에 장애물이 있을 경우 바로 return
 		//=============================================
-		if (mJspMap[iCnt][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[yIndex][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return;
 		}
@@ -591,40 +593,43 @@ void JumpPointSearch::checkUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 		//===================================================
 		// 해당 위치에 목적지가 있을 경우 노드 생성 후 return
 		//===================================================
-		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
+		if (x == mDestinationNode->mX && yIndex == mDestinationNode->mY)
 		{
-			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, yIndex);
 
 			return;
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
+		if (brushBlockList[x][yIndex] != blueBrush && brushBlockList[x][yIndex] != yellowBrush)
 		{
-			brushBlockList[x][iCnt] = randBrush;
+			brushBlockList[x][yIndex] = randBrush;
 		}
 
 
-		if (x > 0 && iCnt - 1 >= 0)
+		if (yIndex > 0)
 		{
-			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (x > 0)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
+				if (mJspMap[yIndex][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, yIndex);
 
-				return;
+					return;
+				}
+			}
+
+
+			if (x + 1 < mMapWidth)
+			{
+				if (mJspMap[yIndex][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, yIndex);
+
+					return;
+				}
 			}
 		}
-
-
-		if (x + 1 < mMapWidth && iCnt - 1 >= 0)
-		{
-			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
-			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_UU, x, iCnt);
-
-				return;
-			}
-		}	
 	}
 
 	return;
@@ -637,69 +642,72 @@ void JumpPointSearch::checkUpVertical(NODE* parentNode, int x, int y, HBRUSH ran
 void JumpPointSearch::checkDownVertical(NODE* parentNode, int x, int y, HBRUSH randBrush)
 {
 
-	//=================================================================================
-	// 왼쪽 아래 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (x > 0 && y + 1 < mMapHeight)
+	if(y + 1 < mMapHeight)
 	{
-		if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK )
+		//=================================================================================
+		// 첫 탐색 시 왼쪽 아래 보조 탐색 영억을 확인합니다.
+		//=================================================================================	
+		if (x > 0)
 		{
-			checkLeftDown(parentNode, x, y, randBrush, false);
-			
-		}
-	}
+			if (mJspMap[y][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkLeftDown(parentNode, x, y, randBrush, false);
 
-	//=================================================================================
-	// 오른쪽 아래 보조 탐색 영억을 생성하는
-	//=================================================================================
-	if (x + 1 < mMapWidth && y + 1 < mMapHeight)
-	{
-		if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			}
+		}
+
+		//=================================================================================
+		// 첫 탐색 시 오른쪽 아래 보조 탐색 영억을 확인합니다.
+		//=================================================================================
+		if (x + 1 < mMapWidth)
 		{
-			checkRightDown(parentNode, x, y, randBrush, false);
-			
+			if (mJspMap[y][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			{
+				checkRightDown(parentNode, x, y, randBrush, false);
+
+			}
 		}
-	}
+	}	
 
 
-	for (int iCnt = y + 1; iCnt < mMapHeight; ++iCnt)
+	for (int yIndex = y + 1; yIndex < mMapHeight; ++yIndex)
 	{
 		// 장애물을 마주칠 경우 return 한다.
-		if (mJspMap[iCnt][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[yIndex][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return;
 		}
 
 
 		// 목적지를 만났을 경우 목적지를 이어주고 return 한다.
-		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
+		if (x == mDestinationNode->mX && yIndex == mDestinationNode->mY)
 		{
-			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+			setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, yIndex);
 
 			return;
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
+		if (brushBlockList[x][yIndex] != blueBrush && brushBlockList[x][yIndex] != yellowBrush)
 		{
-			brushBlockList[x][iCnt] = randBrush;
+			brushBlockList[x][yIndex] = randBrush;
 		}
 
-		if (x > 0 && iCnt + 1 < mMapHeight )
+		if (x > 0 && yIndex + 1 < mMapHeight )
 		{
-			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (mJspMap[yIndex][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, yIndex);
 
 				return;
 			}
 		}
 
-		if (x + 1 < mMapWidth && iCnt + 1 < mMapHeight)
+		if (x + 1 < mMapWidth && yIndex + 1 < mMapHeight)
 		{
-			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (mJspMap[yIndex][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
 			{
-				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, iCnt);
+				setCornerNode(parentNode, NODE_DIRECTION::NODE_DIR_DD, x, yIndex);
 
 				return;
 			}
@@ -716,8 +724,6 @@ void JumpPointSearch::checkDownVertical(NODE* parentNode, int x, int y, HBRUSH r
 //======================================================
 void JumpPointSearch::checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {		
-	bool setOpenNodeFlag;
-
 	//===============================================
 	// 대각선 함수 호출 시 직선 함수 호출 여부
 	//===============================================
@@ -731,7 +737,7 @@ void JumpPointSearch::checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 		//===================================================================
 	}
 
-	while (1)
+	for(;;)
 	{
 		x += 1;
 
@@ -758,15 +764,14 @@ void JumpPointSearch::checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 			return;
 		}
 
-		setOpenNodeFlag = checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
-		if (setOpenNodeFlag)
+
+		// TODO : 밑에 두 개의 함수 하나로 만들기 
+		if (checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush) == true)
 		{
 			return;
 		}
 
-
-		setOpenNodeFlag = checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RU, x, y, randBrush) == true)
 		{
 			return;
 		}
@@ -780,9 +785,7 @@ void JumpPointSearch::checkRightUp(NODE* parentNode, int x, int y, HBRUSH randBr
 // 오른쪽 아래 대각선 함수입니다. 
 //======================================================
 void JumpPointSearch::checkRightDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
-{	
-	bool setOpenNodeFlag;
-
+{		
 	if (firstCall)
 	{
 		//===================================================================
@@ -793,7 +796,7 @@ void JumpPointSearch::checkRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 		//===================================================================
 	}
 
-	while (1)
+	for(;;)
 	{
 		x += 1;
 
@@ -816,14 +819,12 @@ void JumpPointSearch::checkRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 			return;
 		}
 
-		setOpenNodeFlag = checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkRightDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush) == true)
 		{
 			return;
 		}
 
-		setOpenNodeFlag	= checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_RD, x, y, randBrush) == true)
 		{
 			return;
 		}
@@ -838,8 +839,6 @@ void JumpPointSearch::checkRightDown(NODE* parentNode, int x, int y, HBRUSH rand
 //======================================================
 void JumpPointSearch::checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBrush ,bool firstCall)
 {
-	bool setOpenNodeFlag;
-
 	if (firstCall)
 	{
 		//===================================================================
@@ -850,7 +849,7 @@ void JumpPointSearch::checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 		//===================================================================
 	}
 
-	while (1)
+	for(;;)
 	{
 		x -= 1;
 		y -= 1;
@@ -874,14 +873,12 @@ void JumpPointSearch::checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 			return;
 		}
 
-		setOpenNodeFlag = checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush) == true)
 		{
 			return;
 		}
 
-		setOpenNodeFlag = checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkUpDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LU, x, y, randBrush) == true)
 		{
 			return;
 		}
@@ -896,8 +893,6 @@ void JumpPointSearch::checkLeftUp(NODE* parentNode, int x, int y, HBRUSH randBru
 //======================================================
 void JumpPointSearch::checkLeftDown(NODE* parentNode, int x, int y, HBRUSH randBrush, bool firstCall)
 {
-	bool setOpenNodeFlag;
-
 	if (firstCall == true)
 	{
 		//===================================================================
@@ -910,7 +905,7 @@ void JumpPointSearch::checkLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 	}
 
 
-	while (1)
+	for(;;)
 	{
 		x -= 1;
 		y += 1;
@@ -932,14 +927,12 @@ void JumpPointSearch::checkLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 			return;
 		}
 
-		setOpenNodeFlag = checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkLeftDiagonalHorizontal(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush) == true)
 		{
 			return;
 		}
 
-		setOpenNodeFlag = checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush);
-		if (setOpenNodeFlag)
+		if (checkDownDiagonalVertical(parentNode, NODE_DIRECTION::NODE_DIR_LD, x, y, randBrush) == true)
 		{
 			return;
 		}
@@ -954,15 +947,15 @@ void JumpPointSearch::checkLeftDown(NODE* parentNode, int x, int y, HBRUSH randB
 bool JumpPointSearch::checkRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir,int x, int y, HBRUSH randBrush)
 {
 
-	for (int iCnt = x; iCnt < mMapWidth; ++iCnt)
+	for (int xIndex = x; xIndex < mMapWidth; ++xIndex)
 	{
-		if (mJspMap[y][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[y][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return false;
 		}
 	
 		// 목적지 노드를 만났을 경우에는 그 자리에 노드 생성후 return 
-		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
+		if (xIndex == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
 			setCornerNode(parentNode, nodeDir, x, y);
 			
@@ -970,28 +963,31 @@ bool JumpPointSearch::checkRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[xIndex][y] != blueBrush && brushBlockList[xIndex][y] != yellowBrush)
 		{
-			brushBlockList[iCnt][y] = randBrush;
+			brushBlockList[xIndex][y] = randBrush;
 		}
 
-		if (y > 0 && iCnt + 1 < mMapWidth)
+		if (xIndex + 1 < mMapWidth)
 		{
-			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (y > 0)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);
+				if (mJspMap[y - 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][xIndex + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
 
-				return true;
+					return true;
+				}
 			}
-		}
 
-		if(y + 1 < mMapHeight && iCnt + 1 < mMapWidth)
-		{
-			if (mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (y + 1 < mMapHeight)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);
+				if (mJspMap[y + 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][xIndex + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
 
-				return true;
+					return true;
+				}
 			}
 		}	
 	}
@@ -1006,9 +1002,9 @@ bool JumpPointSearch::checkRightDiagonalHorizontal(NODE* parentNode, NODE_DIRECT
 bool JumpPointSearch::checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 
-	for (int iCnt = x; iCnt >= 0; --iCnt)
+	for (int xIndex = x; xIndex >= 0; --xIndex)
 	{
-		if (mJspMap[y][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[y][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return false;
 		}		
@@ -1016,7 +1012,7 @@ bool JumpPointSearch::checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 		//=============================================
 		// 목적지를 만났을 경우 return
 		//=============================================
-		if (iCnt == mDestinationNode->mX && y == mDestinationNode->mY)
+		if (xIndex == mDestinationNode->mX && y == mDestinationNode->mY)
 		{
 			setCornerNode(parentNode, nodeDir, x, y);
 
@@ -1024,31 +1020,34 @@ bool JumpPointSearch::checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[iCnt][y] != blueBrush && brushBlockList[iCnt][y] != yellowBrush)
+		if (brushBlockList[xIndex][y] != blueBrush && brushBlockList[xIndex][y] != yellowBrush)
 		{
-			brushBlockList[iCnt][y] = randBrush;
+			brushBlockList[xIndex][y] = randBrush;
 		}
 
 		
-		if (y > 0 && iCnt > 0)
+		if (xIndex > 0)
 		{
-			if (mJspMap[y - 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (y > 0)
 			{
-			    setCornerNode(parentNode, nodeDir, x, y);
+				if (mJspMap[y - 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y - 1][xIndex - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
 
-				return true;
+					return true;
+				}
+			}
+
+			if (y + 1 < mMapHeight)
+			{
+				if (mJspMap[y + 1][xIndex] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][xIndex - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
+
+					return true;
+				}
 			}
 		}
-
-		if (y + 1 < mMapHeight && iCnt > 0)
-		{
-			if(mJspMap[y + 1][iCnt] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[y + 1][iCnt - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
-			{
-				setCornerNode(parentNode, nodeDir, x, y);
-				
-				return true;
-			}
-		}	
 	}
 
 	return false;
@@ -1061,10 +1060,10 @@ bool JumpPointSearch::checkLeftDiagonalHorizontal(NODE* parentNode, NODE_DIRECTI
 bool JumpPointSearch::checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 	
-	for (int iCnt = y; iCnt >= 0; --iCnt)
+	for (int yIndex = y; yIndex >= 0; --yIndex)
 	{
 		// 장애물 만났을 경우 return
-		if (mJspMap[iCnt][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[yIndex][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return false;
 		}
@@ -1072,7 +1071,7 @@ bool JumpPointSearch::checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 		//=================================================
 		// 목적지 만났을 경우 노드 생성 후 return
 		//=================================================
-		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
+		if (x == mDestinationNode->mX && yIndex == mDestinationNode->mY)
 		{
 			setCornerNode(parentNode, nodeDir, x, y);
 
@@ -1081,28 +1080,31 @@ bool JumpPointSearch::checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
+		if (brushBlockList[x][yIndex] != blueBrush && brushBlockList[x][yIndex] != yellowBrush)
 		{
-			brushBlockList[x][iCnt] = randBrush;
+			brushBlockList[x][yIndex] = randBrush;
 		}
 
-		if (x > 0 && iCnt > 0)
+		if (yIndex > 0)
 		{
-			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (x > 0)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);
-				
-				return true;
+				if (mJspMap[yIndex][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex - 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
+
+					return true;
+				}
 			}
-		}
 
-		if (x + 1 < mMapWidth && iCnt > 0)
-		{
-			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (x + 1 < mMapWidth)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);
+				if (mJspMap[yIndex][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex - 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
 
-				return true;
+					return true;
+				}
 			}
 		}
 	}
@@ -1117,14 +1119,14 @@ bool JumpPointSearch::checkUpDiagonalVertical(NODE* parentNode, NODE_DIRECTION n
 bool JumpPointSearch::checkDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y, HBRUSH randBrush)
 {
 
-	for (int iCnt = y; iCnt < mMapHeight; iCnt++)
+	for (int yIndex = y; yIndex < mMapHeight; yIndex++)
 	{
-		if (mJspMap[iCnt][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
+		if (mJspMap[yIndex][x] == (char)NODE_ATTRIBUTE::NODE_BLOCK)
 		{
 			return false;
 		}	
 
-		if (x == mDestinationNode->mX && iCnt == mDestinationNode->mY)
+		if (x == mDestinationNode->mX && yIndex == mDestinationNode->mY)
 		{
 			setCornerNode(parentNode, nodeDir, x, y);
 
@@ -1132,31 +1134,33 @@ bool JumpPointSearch::checkDownDiagonalVertical(NODE* parentNode, NODE_DIRECTION
 		}
 
 		// 오픈 리스트 노드 또는 클로즈 리스트 노드에는 칠하지 않는다.
-		if (brushBlockList[x][iCnt] != blueBrush && brushBlockList[x][iCnt] != yellowBrush)
+		if (brushBlockList[x][yIndex] != blueBrush && brushBlockList[x][yIndex] != yellowBrush)
 		{
-			brushBlockList[x][iCnt] = randBrush;
+			brushBlockList[x][yIndex] = randBrush;
 		}
 
-		if (x > 0 && iCnt + 1 < mMapHeight)
+		if (yIndex + 1 < mMapHeight)
 		{
-			if (mJspMap[iCnt][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+			if (x > 0)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);
-				
-				return true;
+				if (mJspMap[yIndex][x - 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex + 1][x - 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
+
+					return true;
+				}
 			}
-		}
-
-		if (x + 1 < mMapWidth && iCnt + 1 < mMapHeight)
-		{
-
-			if (mJspMap[iCnt][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[iCnt + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+		
+			if (x + 1 < mMapWidth)
 			{
-				setCornerNode(parentNode, nodeDir, x, y);				
+				if (mJspMap[yIndex][x + 1] == (char)NODE_ATTRIBUTE::NODE_BLOCK && mJspMap[yIndex + 1][x + 1] == (char)NODE_ATTRIBUTE::NODE_UNBLOCK)
+				{
+					setCornerNode(parentNode, nodeDir, x, y);
 
-				return true;
+					return true;
+				}
 			}
-		}
+		}		
 	}
 
 	return false;
@@ -1173,13 +1177,13 @@ JumpPointSearch::NODE* JumpPointSearch::selectOpenListNode()
 	// F값이 작은 순서로 정렬해놨기 때문에 begin값을 뽑으면 첫 노드를 뽑을 수 있다.
 	CList<JumpPointSearch::NODE*>::Iterator iter = mOpenList.begin();
 
-	if ((*iter)->data == nullptr)
+	if (*iter == nullptr)
 	{
 		return nullptr;
 	}
 
 	// 노드의 값을 복사한다.
-	NODE* node = (*iter)->data;
+	NODE* node = *iter;
 
 	// 오픈 리스트에서 해당 노드를 지운다.
 	mOpenList.erase(iter);
@@ -1224,7 +1228,7 @@ void JumpPointSearch::ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize
 
 	resetOptimizeArray(optimizeNodeArray, optimizeNodeArraySize);
 
-	optimizeRouteReset();
+	resetOptimizeRoute();
 
 	resetJspMap();
 
@@ -1257,13 +1261,13 @@ void JumpPointSearch::ReStart(RouteNode* routeNodeArray, int routeNodeArraySize,
 
 	resetJspMap();
 
-	routeReset();
+	resetRoute();
 
 	resetRouteNodeArray(routeNodeArray, routeNodeArraySize);
 
 	resetOptimizeArray(optimizeNodeArray, optimizeNodeArraySize);
 
-	optimizeRouteReset();
+	resetOptimizeRoute();
 }
 
 
@@ -1314,7 +1318,7 @@ void JumpPointSearch::resetRouteList()
 //=============================================================
 // 자연스러운 시작점에서 목적지까지의 경로를 reset한다.
 //=============================================================
-void JumpPointSearch::optimizeRouteReset()
+void JumpPointSearch::resetOptimizeRoute()
 {
 	CList<JumpPointSearch::NODE*>::Iterator iterE = mOptimizeRouteList.end();
 
@@ -1357,7 +1361,7 @@ void JumpPointSearch::resetJspMap()
 //=====================================================================
 // 시작점과 목적지 장애물을 제외하고 블럭 색깔을 리셋한다.
 //======================================================================
-void JumpPointSearch::routeReset()
+void JumpPointSearch::resetRoute()
 {
 	for (int iCntY = 0; iCntY < mMapHeight; iCntY++)
 	{
@@ -1376,7 +1380,7 @@ void JumpPointSearch::routeReset()
 //==================================================================
 void JumpPointSearch::insertRoute(NODE* node)
 {
-	while (1)
+	for(;;)
 	{	
 		mRouteList.PushFront(node);
 
@@ -1416,12 +1420,13 @@ void JumpPointSearch::pathOptimizing()
 
 	CList<JumpPointSearch::NODE*>::Iterator iter = mOptimizeRouteList.begin();
 
-	while(1)
+	for(;;)
 	{
-		startX = iter->mX;
-		startY = iter->mY;
+		startX = (*iter)->mX;
+		startY = (*iter)->mY;
 
-		nextIter = iter.NextIter();
+		nextIter = iter.GetNextIter();
+		//nextIter = ++iter;
 		
 		//========================================================================
 		// iter의 다음 노드가 마지막 노드라면은 break 로직을 종료한다.
@@ -1433,9 +1438,10 @@ void JumpPointSearch::pathOptimizing()
 	
 		nextNextIter = nextIter;
 
-		while (1)
+		for(;;)
 		{
-			nextNextIter = nextNextIter.NextIter();
+			nextNextIter = nextNextIter.GetNextIter();
+			//nextNextIter = ++nextNextIter;
 
 
 			//=====================================================================
@@ -1457,7 +1463,9 @@ void JumpPointSearch::pathOptimizing()
 			//======================================================================
 			if (BresenhamLine::MakeLine(startX, startY, nextEndX, nextEndY))
 			{				
-				(*nextIter)->deleteCheck = true;
+				//nextIter.deleteCheck = true;
+
+				nextIter.SetDeleteFlag();
 			}
 			else
 			{
@@ -1477,7 +1485,7 @@ void JumpPointSearch::pathOptimizing()
 	// 삭제 체크한 노드를 삭제합니다.
 	for (iter = mOptimizeRouteList.begin(); iter != iterE;)
 	{
-		if ((*iter)->deleteCheck)
+		if (iter.GetDeleteFlag())
 		{
 			iter = mOptimizeRouteList.erase(iter);
 		}
@@ -1566,11 +1574,13 @@ void JumpPointSearch::openListBubbleSort() {
 
 	--iterE;
 
-	for (int iCnt = 0; iCnt < mOpenList.listLength; iCnt++)
+	int listSize = mOpenList.GetUseSize();
+
+	for (int iCnt = 0; iCnt < listSize; iCnt++)
 	{
 		for (CList<JumpPointSearch::NODE*>::Iterator iter = mOpenList.begin(); iter != iterE; ++iter)
 		{
-			CList<JumpPointSearch::NODE*>::Iterator iterN = iter.node->next;
+			CList<JumpPointSearch::NODE*>::Iterator iterN = iter.GetNextIter();
 
 			if (iter->F > iterN->F)
 			{
@@ -1580,5 +1590,4 @@ void JumpPointSearch::openListBubbleSort() {
 
 		--iterE;
 	}
-
 }

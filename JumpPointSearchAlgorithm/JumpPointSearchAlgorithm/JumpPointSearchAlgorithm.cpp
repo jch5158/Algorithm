@@ -160,7 +160,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
    hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 1415, 1000, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -261,8 +261,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (wParam == VK_RETURN)
         {            
-            pathFineFlag = true;
-
+            
             jspObject.ReStart(routeNodeArray, 100, optimizeNodeArray, 100);
 
             for (int iCntY = 0; iCntY < MAX_HEIGHT; ++iCntY)
@@ -271,11 +270,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 {
                     if (brushBlockList[iCntX][iCntY] == grayBrush)
                     {
-                        jspObject.SettingMapAttrivute(iCntX, iCntY);
+                        jspObject.SettingMapAttribute(iCntX, iCntY);
                     }
                 }
             }
 
+            pathFineFlag = true;
         }
 
         if (wParam == VK_SPACE)
@@ -506,11 +506,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     }
                 }
             }*/
-
-            
-         
-
-
 
 
             //oldPen = (HPEN)SelectObject(hdc, pinkPen);

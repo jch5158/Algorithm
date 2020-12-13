@@ -31,7 +31,7 @@ public:
 
     bool PathFind(int startX, int startY, int destinationX, int destinationY, RouteNode *routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
 
-    void SettingMapAttrivute(int posX, int posY);
+    void SettingMapAttribute(int posX, int posY);
 
     void ResetAll(RouteNode* routeNodeArray, int routeNodeArraySize, RouteNode* optimizeNodeArray, int optimizeNodeArraySize);
 
@@ -52,7 +52,7 @@ private:
         NODE_DIR_ALL
     };
 
-
+    // 장애물 확인 enum
     enum class NODE_ATTRIBUTE
     {
         NODE_UNBLOCK,
@@ -108,11 +108,12 @@ private:
     //===============================================================================================================================
 
 
-
     void setCornerNode(NODE* parentNode, NODE_DIRECTION nodeDir, int x, int y);
+ 
+    // 노드이 G,H,F 값을 셋팅한다.
+    void setNodeGHF(NODE* pParentNode, int x, int y, float* pG, float* pH, float* pF);
 
     void insertRoute(NODE* node);
-
 
     // 루트 최적화
     void pathOptimizing();
@@ -127,7 +128,7 @@ private:
     void resetRouteList();
     
     // 최적화 루트 리스트 리셋
-    void optimizeRouteReset();
+    void resetOptimizeRoute();
 
     // brush 블럭 리셋
     void resetBlock();
@@ -136,7 +137,7 @@ private:
     void resetJspMap();
 
     // brush 시작점 장애물 끝점 제외하고 리셋
-    void routeReset();
+    void resetRoute();
     
 
     // 배열 루트 셋팅

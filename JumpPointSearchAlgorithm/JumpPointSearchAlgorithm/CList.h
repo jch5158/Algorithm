@@ -7,201 +7,204 @@ class CList
 private:
 	struct Node
 	{
+		// 생성자입니다.
+		Node(T data = NULL):data(data),next(nullptr),prev(nullptr),bDeleteFlag(false)
+		{
+		}
+
 		T data;
 		Node* prev;
 		Node* next;
-
-		bool deleteCheck;
-
-		// 생성자입니다.
-		Node(T data = NULL)
-		{
-			this->data = data;
-			prev = nullptr;
-			next = nullptr;
-			deleteCheck = false;
-		}
+		bool bDeleteFlag;
 	};
 
-	Node* head;
-	Node* tail;
 public:
 
 	class Iterator
 	{
 	public:
-		Node* node;
 
 		friend class CList;
-
+			
 		Iterator(Node* node = nullptr)
 		{
-			this->node = node;
+			mpNode = node;
 		}
 
-		Iterator NextIter()
-		{		
-			Iterator iter(this->node->next);
-			
-			return iter;	
+		Iterator(const Iterator& iter)
+		{
+			mpNode = iter.mpNode;
+		}
+
+		void SetDeleteFlag(void)
+		{
+			mpNode->bDeleteFlag = true;
+		}
+
+		bool GetDeleteFlag(void) const
+		{
+			return mpNode->bDeleteFlag;
+		}
+
+		Iterator GetNextIter()
+		{
+			Iterator iter(mpNode->next);
+
+			return iter;
 		}
 
 
 		// 연산자 오버로딩
-
-		const Iterator& operator++(int)
+		const Iterator operator++(int)
 		{	
-			const Iterator iterator(this->node->next);
+			const Iterator iterator(mpNode);
 			
-			this->node = this->node->next;
+			mpNode = mpNode->next;
 
 			return iterator;
 		}
 
 		Iterator& operator++()
 		{	
-			this->node = this->node->next;
+			mpNode = mpNode->next;
 		
 			return *this;
 		}
 
-
-		const Iterator& operator--(int)
+		const Iterator operator--(int)
 		{
-			const Iterator iterator(this->node->prev);
-
-			this->node = this->node->prev;
+			mpNode = mpNode->prev;
 				
+			const Iterator iterator(mpNode);
+
 			return iterator;
 		}
 
 		Iterator& operator--()
-		{
-			this->node = this->node->prev;
-
+		{			
+			mpNode = mpNode->prev;
+			
 			return *this;
 		}
 
-		Node* operator*() const
+		T& operator*() const
 		{
-			return this->node;
+			return mpNode->data;
 		}
 
-		T operator->() const
+		T& operator->() const
 		{
-			return this->node->data;
+			return mpNode->data;
 		}
 
 		bool operator==(const Iterator& iter) const
 		{
-			return this->node->data == iter.node->data;
+			return mpNode->data == iter.mpNode->data;
 		}
 
 		bool operator!=(const Iterator& iter) const
 		{
-			return !(this->node->data == iter.node->data);
+			return !(mpNode->data == iter.mpNode->data);
 		}
+
+	private:
+
+		Node* mpNode;
 	};
-
-
-public:
-
-	int listLength;
-
+	
 	CList()
 	{
-		head = new Node();
-		tail = new Node();
+		mpHead = new Node();
+		mpTail = new Node();
 
-		head->next = tail;
-		tail->prev = head;
+		mpHead->next = mpTail;
+		mpTail->prev = mpHead;
 
-		head->prev = nullptr;
-		tail->next = nullptr;
-
-		listLength = 0;
+		mListSize = 0;
 	}
 
 	~CList()
 	{
 		Node* prev = nullptr;
 
-		while (head != nullptr)
+		while (mpHead != nullptr)
 		{
-			prev = head;
-			head = head->next;
+			prev = mpHead;
+			mpHead = mpHead->next;
 			delete prev;
 		}
 	}
 
+	int GetUseSize(void) const
+	{
+		return mListSize;
+	}
+
 	void PushBack(T data)
 	{
-		listLength += 1;
+		Node* pNode = new Node(data);
 
-		Node* node = new Node(data);
+		// mpTailPrev에 추가
+		InputNode(mpTail, pNode);
 
-		// 테일 뒤에 추가
-		InputNode(tail, node);
+		mListSize += 1;
 	}
 
 	void PushFront(T data)
 	{
-		listLength += 1;
+		Node* pNode = new Node(data);
 
-		Node* node = new Node(data);
+		InputNode(mpHead->next, pNode);
 
-		InputNode(head->next, node);
+		mListSize += 1;
 	}
 
+	// iter 노드 뒤에 연결
 	void insert(Iterator iter, T data)
-	{
+	{		
+		Node* pNode = new Node(data);
 
-		listLength += 1;
+		InputNode(iter.mpNode, pNode);
 
-		Node* node = new Node(data);
-
-		InputNode(iter.node, node);
+		mListSize += 1;
 	}
 
-	Iterator begin()
+	Iterator begin() const
 	{
-
-		return Iterator(head->next);
+		return Iterator(mpHead->next);
 	}
 
-	Iterator end()
+	Iterator end() const
 	{
-		return Iterator(tail);
+		return Iterator(mpTail);
 	}
 
-	Iterator erase(Iterator iter)
+	Iterator erase(Iterator& iter)
 	{
-		listLength -= 1;
+		mListSize -= 1;
 
 		Iterator iterBuffer = iter;
 
-		iterBuffer.node->prev->next = iterBuffer.node->next;
+		iterBuffer.mpNode->prev->next = iterBuffer.mpNode->next;
 
-		iterBuffer.node->next->prev = iterBuffer.node->prev;
+		iterBuffer.mpNode->next->prev = iterBuffer.mpNode->prev;
 
-		Iterator iterator(iterBuffer.node->next);
+		Iterator iterator(iterBuffer.mpNode->next);
 
-		delete iterBuffer.node;
+		delete iterBuffer.mpNode;
 
 		return iterator;
 	}
 
 	bool Remove(T data)
 	{
-		Iterator iterE = this->end();
+		Iterator iterE = end();
 
-		for (Iterator iter = this->begin(); iter != iterE; ++iter)
+		for (Iterator iter = begin(); iter != iterE; ++iter)
 		{
-
 			if (iter.node->data == data)
 			{
-
-				this->erase(iter);
+				erase(iter);
 
 				return true;
 			}
@@ -210,18 +213,18 @@ public:
 	}
 
 
-	void DataSwap(Iterator iterF, Iterator iterE) {
+	void DataSwap(Iterator iterF, Iterator iterE) 
+	{
+		T bufferData = iterF.mpNode->data;
 
-		T bufferData = iterF.node->data;
+		iterF.mpNode->data = iterE.mpNode->data;
 
-		iterF.node->data = iterE.node->data;
-
-		iterE.node->data = bufferData;
+		iterE.mpNode->data = bufferData;
 	}
 
 private:
 
-	// 특정 노드뒤에 input
+	// node의 prev에 newNode를 연결
 	void InputNode(Node* node, Node* newNode)
 	{
 		newNode->prev = node->prev;
@@ -230,5 +233,11 @@ private:
 		node->prev->next = newNode;
 		node->prev = newNode;
 	}
+
+
+	Node* mpHead;
+	Node* mpTail;
+
+	int mListSize;
 
 };

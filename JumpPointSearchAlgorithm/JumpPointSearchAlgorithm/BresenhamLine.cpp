@@ -23,7 +23,7 @@ bool BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 	{
 		errorValue = subX;
 
-		while (1)
+		for(;;)
 		{
 			if (startX <= endX)
 			{
@@ -69,7 +69,7 @@ bool BresenhamLine::MakeLine(int startX, int startY, int endX, int endY)
 	{
 		errorValue = subY;
 
-		while (1)
+		for(;;)
 		{
 
 			if (startX <= endX)
@@ -135,7 +135,7 @@ bool BresenhamLine::CatchLine(int startX, int startY, int endX, int endY)
 	{
 		errorValue = subX;
 
-		while (1)
+		for(;;)
 		{
 			if (startX <= endX)
 			{
@@ -185,7 +185,7 @@ bool BresenhamLine::CatchLine(int startX, int startY, int endX, int endY)
 	{
 		errorValue = subY;
 
-		while (1)
+		for(;;)
 		{
 
 			if (startX <= endX)
